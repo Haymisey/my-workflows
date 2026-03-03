@@ -19,7 +19,7 @@
           "parameters": [
             {
               "name": "access_key",
-              "value": "f530af7c532f068c0612a117f0436ed7"
+              "value": "REDACTED_ACCESS_KEY"
             },
             {
               "name": "airline_name",
@@ -54,7 +54,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.powerbi.com/beta/a3be2d39-c8cb-499b-9c85-b71e09f93f9f/datasets/79a216f2-bd38-4aef-a32b-0af6862a890d/rows?experience=power-bi&disablecdnExpiration=1772552316&key=Oke4Nne16ezJKkCtr6q4%2BgYR%2FMD88Zri9chlEd4Nur%2F6Nm7z6i5BKmiAHyszlgiJnWyWrOqzauBKxVofuqJ47w%3D%3D",
+"url": "https://api.powerbi.com/.../?key=REDACTED_POWERBI_KEY","
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json.data }}",
@@ -118,7 +118,7 @@
             },
             {
               "name": "appid",
-              "value": "a80a9ac453482bf2b544fa4d40423659"
+              "value": "REDACTED_OPENWEATHER_API_KEY"
             }
           ]
         },
