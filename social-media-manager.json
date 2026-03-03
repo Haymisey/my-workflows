@@ -1,0 +1,1001 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -352,
+        -416
+      ],
+      "id": "2ce9c720-3f44-4d10-b232-cbb25eb8e055",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{ \"AppName\": \"Tesfa AI\",\n  \"campaign_context\": \"**CAMPAIGN: \\\"10 Roles, 10 Tech Flexes, 10 Weeks\\\" (Tesfa AI)**\\n\\n**Week 0: Foundations**\\n- Role: Software Engineer Trainee\\n- Tech Flex: Git & Version Control Mastery\\n- Content: Basics of SE, Terminal usage, Git flow.\\n\\n**Week 1: React Developer**\\n- Flex: Built a full-stack React app in 2 weeks (React + TypeScript).\\n\\n**Week 2: Full-Stack Developer**\\n- Flex: Mastered Node.js backend architecture.\\n\\n**Week 3: Python Developer**\\n- Flex: Certified in Python + Django framework.\\n\\n**Week 4: DevOps Engineer**\\n- Flex: AWS Certified + CI/CD pipeline mastery.\\n\\n**Week 5: Data Scientist**\\n- Flex: ML model deployed to production.\\n\\n**Week 6: Mobile Developer**\\n- Flex: Built cross-platform app with React Native.\\n\\n**Week 7: Cloud Architect**\\n- Flex: Azure Certified + Multi-cloud expertise.\\n\\n**Week 8: UI/UX Designer**\\n- Flex: Created design system used by 10+ products.\\n\\n**Week 9: Backend Engineer**\\n- Flex: Architected microservices handling 1M+ requests/day.\\n\\n**Week 10: AI Engineer**\\n- Flex: Integrated LLM APIs into production apps.\\n\\n**Week 11: Campaign Wrap-Up**\\n- Focus: Top Flexes, Winners, Highlights.\\n\\n**Voice & Tone:**\\n- Empowering, energetic, student-centric.\\n- Hashtag: #WhatsYourFlex\\n- Call to Action: \\\"Get certified -> tesfa.ai\\\"\",\n  \"campaign_start_date\": \"2025-12-12\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "94d033c4-5c2a-464c-b7d7-ac5014afc63e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        176
+      ],
+      "id": "a406a01d-ffe6-4aa0-8e37-1d43a9f7f936",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "haymanotseyoum3@gmail.com",
+        "subject": "=Approve Post for {{ $now.toLocaleString() }}",
+        "message": "=<a href=\"YOUR_WEBHOOK_URL_HERE\">\n\nheadline: {{ $json.headline }}\n\nlinkedin: {{ $json.linkedin_content }}\n\ntwitter: {{ $json.twitter_content }}\n\n\n</a>",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        736,
+        0
+      ],
+      "id": "f6a816d3-ecda-4668-a323-d4e0747a5ea7",
+      "name": "Send message and wait for response",
+      "webhookId": "3ca40d6d-f319-41c3-b146-ffa79b070e00",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n2YsqNi26ewhmhjO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e32d270f-f258-4522-94e1-2cb7ee4e8d2a",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0b0739c-caa7-4bc2-8b26-6dc16e849109",
+      "name": "Is Content Approved?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        944,
+        0
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Code').item.json.twitter_content }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -16
+      ],
+      "id": "d35ca402-c460-4fae-b0b5-21f957b631c5",
+      "name": "Create Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "4dd5q2k6xNFIlG9m",
+          "name": "X account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        400
+      ],
+      "id": "0526248f-3f81-4cea-a5ca-fd26d90a0949",
+      "name": "Create a post"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the raw text from the AI\nconst aiOutput = $input.first().json.output;\n\n// 2. Clean up the Markdown (remove ```json and ```)\nconst cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// 3. Convert the string into a real JSON Object\nconst parsedData = JSON.parse(cleanJson);\n\n// 4. Return the clean data\nreturn parsedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        0
+      ],
+      "id": "aff24fb0-2849-42ce-b2ed-8ffb49079d91",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        592
+      ],
+      "id": "550dc36b-37d7-42ac-8091-599980dd6b37",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "haymanotseyoum3@gmail.com",
+        "subject": "=Approve Post for {{ $now.toDateString() }}",
+        "message": "=<a href=\"YOUR_WEBHOOK_URL_HERE\">\n\n{{ $json.headline }}\n\n{{ $json.linkedin_content }}\n\n{{ $json.twitter_content }}\n\n\n</a>",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        416
+      ],
+      "id": "8e6473ac-3a9e-491b-a120-16c813ac8590",
+      "name": "Send message and wait for response1",
+      "webhookId": "3ca40d6d-f319-41c3-b146-ffa79b070e00",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n2YsqNi26ewhmhjO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e32d270f-f258-4522-94e1-2cb7ee4e8d2a",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "43915591-e82e-4a49-9795-951ab564d58e",
+      "name": "Is Content Approved?1",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        976,
+        416
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the raw text from the AI\nconst aiOutput = $input.first().json.output;\n\n// 2. Clean up the Markdown (remove ```json and ```)\nconst cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// 3. Convert the string into a real JSON Object\nconst parsedData = JSON.parse(cleanJson);\n\n// 4. Return the clean data\nreturn parsedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        416
+      ],
+      "id": "21d46dae-c93a-4e1b-a369-2758b505712f",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -240
+      ],
+      "id": "6e3fafbc-6f37-45c0-88a3-1a9546997f3f",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "haymanotseyoum3@gmail.com",
+        "subject": "=Approve Post for {{ $now.toDateString() }}",
+        "message": "=<a href=\"YOUR_WEBHOOK_URL_HERE\">\n\n{{ $json.headline }}\n\n{{ $json.linkedin_content }}\n\n{{ $json.twitter_content }}\n\n\n</a>",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -416
+      ],
+      "id": "c640c18c-a7d9-4ad6-8961-27ea18c16560",
+      "name": "Send message and wait for response2",
+      "webhookId": "3ca40d6d-f319-41c3-b146-ffa79b070e00",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n2YsqNi26ewhmhjO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e32d270f-f258-4522-94e1-2cb7ee4e8d2a",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be46ba9e-4bca-4442-a96c-79c3067b1a13",
+      "name": "Is Content Approved?2",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1008,
+        -416
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the raw text from the AI\nconst aiOutput = $input.first().json.output;\n\n// 2. Clean up the Markdown (remove ```json and ```)\nconst cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// 3. Convert the string into a real JSON Object\nconst parsedData = JSON.parse(cleanJson);\n\n// 4. Return the clean data\nreturn parsedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -416
+      ],
+      "id": "ba9f40e7-33e5-4a27-8a79-cfd980711bcf",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        960
+      ],
+      "id": "6fc6c8ee-54fb-4341-87f8-a2d7b0d9781b",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "haymanotseyoum3@gmail.com",
+        "subject": "=Approve Post for {{ $now.toDateString() }}",
+        "message": "=<a href=\"YOUR_WEBHOOK_URL_HERE\">\n\n{{ $json.headline }}\n\n{{ $json.linkedin_content }}\n\n{{ $json.twitter_content }}\n\n\n</a>",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        736,
+        784
+      ],
+      "id": "36545fef-df16-46d6-a29c-cc28115e5eeb",
+      "name": "Send message and wait for response3",
+      "webhookId": "3ca40d6d-f319-41c3-b146-ffa79b070e00",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n2YsqNi26ewhmhjO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "e32d270f-f258-4522-94e1-2cb7ee4e8d2a",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4d383efb-f7dc-46ae-8681-bb690af7c8bf",
+      "name": "Is Content Approved?3",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        960,
+        784
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the raw text from the AI\nconst aiOutput = $input.first().json.output;\n\n// 2. Clean up the Markdown (remove ```json and ```)\nconst cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// 3. Convert the string into a real JSON Object\nconst parsedData = JSON.parse(cleanJson);\n\n// 4. Return the clean data\nreturn parsedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        784
+      ],
+      "id": "c1d844f1-3530-412a-8b2c-bae0e89e4499",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Social Media Manager for {{ $json.AppName }}. \n\n**CURRENT STATUS:**\n- Current Week of Campaign: Week {{ $json.current_week }}\n- Today is: {{ $json.current_day }}\n\n**CAMPAIGN SCHEDULE (Source of Truth):**\n{{ $json.campaign_context }}\n\n**YOUR INSTRUCTION FOR TODAY:**\n{{ $json.day_instruction }}\n\n**OUTPUT TASK:**\nCreate a social media post for X (Twitter) and LinkedIn based strictly on the Week {{ $json.current_week }} details in the schedule above.\n\n**Output Format:** valid JSON with 3 keys:\n1. headline (Max 6 words, punchy)\n2. linkedin_content (Professional, using the Week {{ $json.current_week }} role/flex details)\n3. twitter_content (Casual, using the Week {{ $json.current_week }} role/flex details, max 200 chars)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        -416
+      ],
+      "id": "3d2b26e0-065c-47c8-944a-00746e31eaf2",
+      "name": "Tiktok"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Senior Developer Advocate for {{ $json.AppName }}. You are NOT a marketing manager. You speak \"Developer\", not \"Corporate Brand\".\n\n**CURRENT STATUS:**\n- Current Week of Campaign: Week {{ $json.current_week }}\n- Today is: {{ $json.current_day }}\n\n**CAMPAIGN SCHEDULE:**\n{{ $json.campaign_context }}\n\n**YOUR INSTRUCTION FOR TODAY:**\n{{ $json.day_instruction }}\n\n**CRITICAL STYLE RULES (DO NOT IGNORE):**\n1. 🚫 NO EMOJIS. (Use only simple arrows -> if needed for links).\n2. 🚫 NO EXCLAMATION MARKS. Developers don't scream; they state facts.\n3. 🚫 NO BUZZWORDS. Banned words: \"Unleash\", \"Skyrocket\", \"Transform\", \"Elevate\", \"Game-changer\".\n4. TONE: Witty, technical, authoritative, slightly cynical. Use \"Shared Pain\" (e.g., bugs, conflicts, legacy code) to relate.\n5. HOOKS: Start with a controversial opinion or a hard technical truth.\n\n**OUTPUT TASK:**\nCreate a social media post for X (Twitter) and LinkedIn based strictly on Week {{ $json.current_week }}.\n\n**Output Format:** valid JSON with 3 keys:\n1. headline (Max 6 words, dry wit or technical truth)\n2. linkedin_content (Professional but conversational. Focus on the career reality of this role. 3-4 sentences.)\n3. twitter_content (Max 200 chars. A hook, a technical truth, and a specific question. Do not use hashtags.)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ebb18087-af99-40ab-b8b5-cec9071393d1",
+      "name": "X"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Social Media Manager for {{ $json.AppName }}. \n\n**CURRENT STATUS:**\n- Current Week of Campaign: Week {{ $json.current_week }}\n- Today is: {{ $json.current_day }}\n\n**CAMPAIGN SCHEDULE (Source of Truth):**\n{{ $json.campaign_context }}\n\n**YOUR INSTRUCTION FOR TODAY:**\n{{ $json.day_instruction }}\n\n**OUTPUT TASK:**\nCreate a social media post for X (Twitter) and LinkedIn based strictly on the Week {{ $json.current_week }} details in the schedule above.\n\n**Output Format:** valid JSON with 3 keys:\n1. headline (Max 6 words, punchy)\n2. linkedin_content (Professional, using the Week {{ $json.current_week }} role/flex details)\n3. twitter_content (Casual, using the Week {{ $json.current_week }} role/flex details, max 200 chars)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        416
+      ],
+      "id": "29f0a244-40bb-4f90-b0a8-48822e9460e2",
+      "name": "Linkedin"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"AppName\": \"Tesfa AI\",\n  \"AppDescription\": \"Tesfa AI — AI-Powered Talent Development Platform\\nConnect companies with certified talent. Companies create job-specific certifications; students get certified and join talent pipelines before applying.\\nFor Companies:\\nCreate company-specific certifications and define required skills\\nBuild talent pipelines with pre-trained candidates\\nReduce hiring time from 6 months to 2 weeks\\nAccess candidates already trained on your tech stack\\nAI-powered job role creation and assessment generation\\nFor Students:\\nSee exactly what companies need\\nGet certified in company-specific skills\\nJoin talent pipelines before applying\\nBuild a verifiable skills portfolio\\nGet hired by companies that trust your certification\\nKey Features:\\nAI-powered agents for companies and students\\nInteractive learning paths and assessments\\nReal-time progress tracking\\nSkill-based certification system\\nDirect company-talent matching\\nPersonalized career guidance\\nTransform how companies hire and how students get hired. Close the skills gap and connect learning to earning.\",\n  \"AppUrl\": \"https://www.tesfa.ai\",\n  \"campaign_context\": \"**CAMPAIGN: \\\"10 Roles, 10 Tech Flexes, 10 Weeks\\\" (Tesfa AI)**\\n\\n**Week 0: Foundations**\\n- Role: Software Engineer Trainee\\n- Tech Flex: Git & Version Control Mastery\\n- Content: Basics of SE, Terminal usage, Git flow.\\n\\n**Week 1: React Developer**\\n- Flex: Built a full-stack React app in 2 weeks (React + TypeScript).\\n\\n**Week 2: Full-Stack Developer**\\n- Flex: Mastered Node.js backend architecture.\\n\\n**Week 3: Python Developer**\\n- Flex: Certified in Python + Django framework.\\n\\n**Week 4: DevOps Engineer**\\n- Flex: AWS Certified + CI/CD pipeline mastery.\\n\\n**Week 5: Data Scientist**\\n- Flex: ML model deployed to production.\\n\\n**Week 6: Mobile Developer**\\n- Flex: Built cross-platform app with React Native.\\n\\n**Week 7: Cloud Architect**\\n- Flex: Azure Certified + Multi-cloud expertise.\\n\\n**Week 8: UI/UX Designer**\\n- Flex: Created design system used by 10+ products.\\n\\n**Week 9: Backend Engineer**\\n- Flex: Architected microservices handling 1M+ requests/day.\\n\\n**Week 10: AI Engineer**\\n- Flex: Integrated LLM APIs into production apps.\\n\\n**Week 11: Campaign Wrap-Up**\\n- Focus: Top Flexes, Winners, Highlights.\\n\\n**Voice & Tone:**\\n- Empowering, energetic, student-centric.\\n- Hashtag: #WhatsYourFlex\\n- Call to Action: \\\"Get certified -> tesfa.ai\\\"\",\n  \"campaign_start_date\": \"2025-12-12\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        416
+      ],
+      "id": "dbe05e60-7f9f-484e-8987-86ab0a980de2",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"AppName\": \"Tesfa AI\",\n  \"AppDescription\": \"Tesfa AI — AI-Powered Talent Development Platform\\nConnect companies with certified talent. Companies create job-specific certifications; students get certified and join talent pipelines before applying.\\nFor Companies:\\nCreate company-specific certifications and define required skills\\nBuild talent pipelines with pre-trained candidates\\nReduce hiring time from 6 months to 2 weeks\\nAccess candidates already trained on your tech stack\\nAI-powered job role creation and assessment generation\\nFor Students:\\nSee exactly what companies need\\nGet certified in company-specific skills\\nJoin talent pipelines before applying\\nBuild a verifiable skills portfolio\\nGet hired by companies that trust your certification\\nKey Features:\\nAI-powered agents for companies and students\\nInteractive learning paths and assessments\\nReal-time progress tracking\\nSkill-based certification system\\nDirect company-talent matching\\nPersonalized career guidance\\nTransform how companies hire and how students get hired. Close the skills gap and connect learning to earning.\",\n  \"AppUrl\": \"https://www.tesfa.ai\",\n  \"campaign_context\": \"**CAMPAIGN: \\\"10 Roles, 10 Tech Flexes, 10 Weeks\\\" (Tesfa AI)**\\n\\n**Week 0: Foundations**\\n- Role: Software Engineer Trainee\\n- Tech Flex: Git & Version Control Mastery\\n- Content: Basics of SE, Terminal usage, Git flow.\\n\\n**Week 1: React Developer**\\n- Flex: Built a full-stack React app in 2 weeks (React + TypeScript).\\n\\n**Week 2: Full-Stack Developer**\\n- Flex: Mastered Node.js backend architecture.\\n\\n**Week 3: Python Developer**\\n- Flex: Certified in Python + Django framework.\\n\\n**Week 4: DevOps Engineer**\\n- Flex: AWS Certified + CI/CD pipeline mastery.\\n\\n**Week 5: Data Scientist**\\n- Flex: ML model deployed to production.\\n\\n**Week 6: Mobile Developer**\\n- Flex: Built cross-platform app with React Native.\\n\\n**Week 7: Cloud Architect**\\n- Flex: Azure Certified + Multi-cloud expertise.\\n\\n**Week 8: UI/UX Designer**\\n- Flex: Created design system used by 10+ products.\\n\\n**Week 9: Backend Engineer**\\n- Flex: Architected microservices handling 1M+ requests/day.\\n\\n**Week 10: AI Engineer**\\n- Flex: Integrated LLM APIs into production apps.\\n\\n**Week 11: Campaign Wrap-Up**\\n- Focus: Top Flexes, Winners, Highlights.\\n\\n**Voice & Tone:**\\n- Empowering, energetic, student-centric.\\n- Hashtag: #WhatsYourFlex\\n- Call to Action: \\\"Get certified -> tesfa.ai\\\"\",\n  \"campaign_start_date\": \"2025-12-12\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        784
+      ],
+      "id": "b64cc089-92d2-4968-93f7-b6118841c861",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"AppName\": \"Tesfa AI\",\n  \"AppDescription\": \"Tesfa AI — AI-Powered Talent Development Platform\\nConnect companies with certified talent. Companies create job-specific certifications; students get certified and join talent pipelines before applying.\\nFor Companies:\\nCreate company-specific certifications and define required skills\\nBuild talent pipelines with pre-trained candidates\\nReduce hiring time from 6 months to 2 weeks\\nAccess candidates already trained on your tech stack\\nAI-powered job role creation and assessment generation\\nFor Students:\\nSee exactly what companies need\\nGet certified in company-specific skills\\nJoin talent pipelines before applying\\nBuild a verifiable skills portfolio\\nGet hired by companies that trust your certification\\nKey Features:\\nAI-powered agents for companies and students\\nInteractive learning paths and assessments\\nReal-time progress tracking\\nSkill-based certification system\\nDirect company-talent matching\\nPersonalized career guidance\\nTransform how companies hire and how students get hired. Close the skills gap and connect learning to earning.\",\n  \"AppUrl\": \"https://www.tesfa.ai\",\n  \"campaign_context\": \"**CAMPAIGN: \\\"10 Roles, 10 Tech Flexes, 10 Weeks\\\" (Tesfa AI)**\\n\\n**Week 0: Foundations**\\n- Role: Software Engineer Trainee\\n- Tech Flex: Git & Version Control Mastery\\n- Content: Basics of SE, Terminal usage, Git flow.\\n\\n**Week 1: React Developer**\\n- Flex: Built a full-stack React app in 2 weeks (React + TypeScript).\\n\\n**Week 2: Full-Stack Developer**\\n- Flex: Mastered Node.js backend architecture.\\n\\n**Week 3: Python Developer**\\n- Flex: Certified in Python + Django framework.\\n\\n**Week 4: DevOps Engineer**\\n- Flex: AWS Certified + CI/CD pipeline mastery.\\n\\n**Week 5: Data Scientist**\\n- Flex: ML model deployed to production.\\n\\n**Week 6: Mobile Developer**\\n- Flex: Built cross-platform app with React Native.\\n\\n**Week 7: Cloud Architect**\\n- Flex: Azure Certified + Multi-cloud expertise.\\n\\n**Week 8: UI/UX Designer**\\n- Flex: Created design system used by 10+ products.\\n\\n**Week 9: Backend Engineer**\\n- Flex: Architected microservices handling 1M+ requests/day.\\n\\n**Week 10: AI Engineer**\\n- Flex: Integrated LLM APIs into production apps.\\n\\n**Week 11: Campaign Wrap-Up**\\n- Focus: Top Flexes, Winners, Highlights.\\n\\n**Voice & Tone:**\\n- Empowering, energetic, student-centric.\\n- Hashtag: #WhatsYourFlex\\n- Call to Action: \\\"Get certified -> tesfa.ai\\\"\",\n  \"campaign_start_date\": \"2025-12-12\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        -416
+      ],
+      "id": "bc3b4388-8a7c-4a3a-80b7-6f133dbc577f",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "3d85543a-b3e9-4bb8-8d6f-62145a5cc041",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        416
+      ],
+      "id": "b83f4278-a34d-47a1-8685-2f7f74522fab",
+      "name": "Schedule Trigger2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        784
+      ],
+      "id": "b0cd6e69-9b76-4baf-b7f1-ca0156658ddc",
+      "name": "Schedule Trigger3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Social Media Manager for {{ $json.AppName }}. \n\n**CURRENT STATUS:**\n- Current Week of Campaign: Week {{ $json.current_week }}\n- Today is: {{ $json.current_day }}\n\n**CAMPAIGN SCHEDULE (Source of Truth):**\n{{ $json.campaign_context }}\n\n**YOUR INSTRUCTION FOR TODAY:**\n{{ $json.day_instruction }}\n\n**OUTPUT TASK:**\nCreate a social media post for X (Twitter) and LinkedIn based strictly on the Week {{ $json.current_week }} details in the schedule above.\n\n**Output Format:** valid JSON with 3 keys:\n1. headline (Max 6 words, punchy)\n2. linkedin_content (Professional, using the Week {{ $json.current_week }} role/flex details)\n3. twitter_content (Casual, using the Week {{ $json.current_week }} role/flex details, max 200 chars)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        784
+      ],
+      "id": "c0811e82-360b-44d3-abcb-6c3bcde42fe9",
+      "name": "Instagram"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get start date and context from previous node\nconst startDate = new Date($input.first().json.campaign_start_date);\nconst context = $input.first().json.campaign_context;\nconst today = new Date();\n\n// Calculate difference in time\nconst diffTime = Math.abs(today - startDate);\nconst diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); \n\n// Calculate Week Number (0-11)\nconst currentWeek = Math.floor(diffDays / 7);\n\n// Determine Day of Week\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst currentDay = days[today.getDay()];\n\n// Select the specific instruction based on the day\nlet dayInstruction = \"\";\n\nif (currentDay === 'Monday') {\n    dayInstruction = \"Today is MONDAY. Focus on the ROLE REVEAL. Refer to the 'Role' and 'Content' for the current week in the schedule.\";\n} else if (currentDay === 'Wednesday') {\n    dayInstruction = \"Today is WEDNESDAY. Focus on the TECH FLEX. Refer to the 'Tech Flex' achievement for the current week.\";\n} else if (currentDay === 'Friday') {\n    dayInstruction = \"Today is FRIDAY. Focus on the SUCCESS STORY/Transformation. Refer to the specific Role and Flex to write a before/after story.\";\n} else {\n    dayInstruction = \"Today is a generic engagement day. Share a tip related to software engineering or the current week's role.\";\n}\n\nreturn {\n    current_week: currentWeek,\n    current_day: currentDay,\n    day_instruction: dayInstruction,\n    campaign_context: context,\n    // Pass through other fields\n    AppName: $input.first().json.AppName\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        416
+      ],
+      "id": "5b8ae57e-f1a7-4ede-9714-6a978571a15c",
+      "name": "Date"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get start date and context from previous node\nconst startDate = new Date($input.first().json.campaign_start_date);\nconst context = $input.first().json.campaign_context;\nconst today = new Date();\n\n// Calculate difference in time\nconst diffTime = Math.abs(today - startDate);\nconst diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); \n\n// Calculate Week Number (0-11)\nconst currentWeek = Math.floor(diffDays / 7);\n\n// Determine Day of Week\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst currentDay = days[today.getDay()];\n\n// Select the specific instruction based on the day\nlet dayInstruction = \"\";\n\nif (currentDay === 'Monday') {\n    dayInstruction = \"Today is MONDAY. Focus on the ROLE REVEAL. Refer to the 'Role' and 'Content' for the current week in the schedule.\";\n} else if (currentDay === 'Wednesday') {\n    dayInstruction = \"Today is WEDNESDAY. Focus on the TECH FLEX. Refer to the 'Tech Flex' achievement for the current week.\";\n} else if (currentDay === 'Friday') {\n    dayInstruction = \"Today is FRIDAY. Focus on the SUCCESS STORY/Transformation. Refer to the specific Role and Flex to write a before/after story.\";\n} else {\n    dayInstruction = \"Today is a generic engagement day. Share a tip related to software engineering or the current week's role.\";\n}\n\nreturn {\n    current_week: currentWeek,\n    current_day: currentDay,\n    day_instruction: dayInstruction,\n    campaign_context: context,\n    // Pass through other fields\n    AppName: $input.first().json.AppName\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        784
+      ],
+      "id": "0ac4291a-16eb-4bea-9335-c4af2c8fae48",
+      "name": "Date1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get start date and context from previous node\nconst startDate = new Date($input.first().json.campaign_start_date);\nconst context = $input.first().json.campaign_context;\nconst today = new Date();\n\n// Calculate difference in time\nconst diffTime = Math.abs(today - startDate);\nconst diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); \n\n// Calculate Week Number (0-11)\nconst currentWeek = Math.floor(diffDays / 7);\n\n// Determine Day of Week\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst currentDay = days[today.getDay()];\n\n// Select the specific instruction based on the day\nlet dayInstruction = \"\";\n\nif (currentDay === 'Monday') {\n    dayInstruction = \"Today is MONDAY. Focus on the ROLE REVEAL. Refer to the 'Role' and 'Content' for the current week in the schedule.\";\n} else if (currentDay === 'Wednesday') {\n    dayInstruction = \"Today is WEDNESDAY. Focus on the TECH FLEX. Refer to the 'Tech Flex' achievement for the current week.\";\n} else if (currentDay === 'Friday') {\n    dayInstruction = \"Today is FRIDAY. Focus on the SUCCESS STORY/Transformation. Refer to the specific Role and Flex to write a before/after story.\";\n} else {\n    dayInstruction = \"Today is a generic engagement day. Share a tip related to software engineering or the current week's role.\";\n}\n\nreturn {\n    current_week: currentWeek,\n    current_day: currentDay,\n    day_instruction: dayInstruction,\n    campaign_context: context,\n    // Pass through other fields\n    AppName: $input.first().json.AppName\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "50486338-4b72-4e6d-8360-cab5dcbde64f",
+      "name": "Date2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get start date and context from previous node\nconst startDate = new Date($input.first().json.campaign_start_date);\nconst context = $input.first().json.campaign_context;\nconst today = new Date();\n\n// Calculate difference in time\nconst diffTime = Math.abs(today - startDate);\nconst diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); \n\n// Calculate Week Number (0-11)\nconst currentWeek = Math.floor(diffDays / 7);\n\n// Determine Day of Week\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst currentDay = days[today.getDay()];\n\n// Select the specific instruction based on the day\nlet dayInstruction = \"\";\n\nif (currentDay === 'Monday') {\n    dayInstruction = \"Today is MONDAY. Focus on the ROLE REVEAL. Refer to the 'Role' and 'Content' for the current week in the schedule.\";\n} else if (currentDay === 'Wednesday') {\n    dayInstruction = \"Today is WEDNESDAY. Focus on the TECH FLEX. Refer to the 'Tech Flex' achievement for the current week.\";\n} else if (currentDay === 'Friday') {\n    dayInstruction = \"Today is FRIDAY. Focus on the SUCCESS STORY/Transformation. Refer to the specific Role and Flex to write a before/after story.\";\n} else {\n    dayInstruction = \"Today is a generic engagement day. Share a tip related to software engineering or the current week's role.\";\n}\n\nreturn {\n    current_week: currentWeek,\n    current_day: currentDay,\n    day_instruction: dayInstruction,\n    campaign_context: context,\n    // Pass through other fields\n    AppName: $input.first().json.AppName\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -416
+      ],
+      "id": "58c7f163-391d-429f-a8eb-f338f85ac15c",
+      "name": "Date3"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Date2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "X",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "Is Content Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Content Approved?": {
+      "main": [
+        [
+          {
+            "node": "Create Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tweet": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Linkedin",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response1": {
+      "main": [
+        [
+          {
+            "node": "Is Content Approved?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Content Approved?1": {
+      "main": [
+        []
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Tiktok",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response2": {
+      "main": [
+        [
+          {
+            "node": "Is Content Approved?2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Instagram",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response3": {
+      "main": [
+        [
+          {
+            "node": "Is Content Approved?3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tiktok": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Date1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Date3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date": {
+      "main": [
+        [
+          {
+            "node": "Linkedin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date1": {
+      "main": [
+        [
+          {
+            "node": "Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date2": {
+      "main": [
+        [
+          {
+            "node": "X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date3": {
+      "main": [
+        [
+          {
+            "node": "Tiktok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

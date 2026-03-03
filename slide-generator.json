@@ -1,0 +1,745 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://slides.googleapis.com/v1/presentations/{{ $('Create a presentation').item.json.presentationId }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSlidesOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"createSlide\": {\n        \"objectId\": \"slide_{{ $runIndex }}\",\n        \"slideLayoutReference\": {\n          \"predefinedLayout\": \"BLANK\"\n        }\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"title_box_{{ $runIndex }}_1\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 100,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 600,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 50,\n            \"translateY\": 50,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"title_box_{{ $runIndex }}_1\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $('Loop Over Items').item.json.title }}\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 300,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 600,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 50,\n            \"translateY\": 170,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ '- ' + $('Loop Over Items').item.json.bullets.join('\\\\n- ') }}\"\n      }\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        528
+      ],
+      "id": "d36355ea-be15-45bc-91b3-8f97aa551cc6",
+      "name": "Google Slide BASIC Generation",
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "IGOTBKmMxStA6lfo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://slides.googleapis.com/v1/presentations/{{ $('Create a presentation').item.json.presentationId }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSlidesOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"createSlide\": {\n        \"objectId\": \"slide_{{ $runIndex }}\",\n        \"slideLayoutReference\": {\n          \"predefinedLayout\": \"BLANK\"\n        }\n      }\n    },\n    {\n      \"updatePageProperties\": {\n        \"objectId\": \"slide_{{ $runIndex }}\",\n        \"pageProperties\": {\n          \"pageBackgroundFill\": {\n            \"solidFill\": {\n              \"color\": {\n                \"rgbColor\": {\n                  \"red\": 0.95,\n                  \"green\": 0.97,\n                  \"blue\": 0.95\n                }\n              },\n              \"alpha\": 1.0\n            }\n          }\n        },\n        \"fields\": \"pageBackgroundFill\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"bg_accent_{{ $runIndex }}\",\n        \"shapeType\": \"ELLIPSE\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 400,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 400,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1.2,\n            \"scaleY\": 0.6,\n            \"translateX\": 450,\n            \"translateY\": 200,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"updateShapeProperties\": {\n        \"objectId\": \"bg_accent_{{ $runIndex }}\",\n        \"shapeProperties\": {\n          \"shapeBackgroundFill\": {\n            \"solidFill\": {\n              \"color\": {\n                \"rgbColor\": {\n                  \"red\": 0.85,\n                  \"green\": 0.95,\n                  \"blue\": 0.87\n                }\n              },\n              \"alpha\": 0.6\n            }\n          }\n        },\n        \"fields\": \"shapeBackgroundFill\"\n      }\n    },\n    {\n      \"updateShapeProperties\": {\n        \"objectId\": \"bg_accent_{{ $runIndex }}\",\n        \"shapeProperties\": {\n          \"outline\": {\n            \"propertyState\": \"NOT_RENDERED\"\n          }\n        },\n        \"fields\": \"outline.propertyState\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"section_label_{{ $runIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 40,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 200,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 56,\n            \"translateY\": 15,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"section_label_{{ $runIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $json.logo_name }}\"\n      }\n    },\n    {\n      \"updateTextStyle\": {\n        \"objectId\": \"section_label_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"fontFamily\": \"Open Sans\",\n          \"fontSize\": {\n            \"magnitude\": 14,\n            \"unit\": \"PT\"\n          },\n          \"foregroundColor\": {\n            \"opaqueColor\": {\n              \"rgbColor\": {\n                \"red\": 0.4,\n                \"green\": 0.6,\n                \"blue\": 0.5\n              }\n            }\n          }\n        },\n        \"fields\": \"fontFamily,fontSize,foregroundColor\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"main_title_{{ $runIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 120,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 624,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 56,\n            \"translateY\": 47,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"main_title_{{ $runIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $('Loop Over Items').item.json.title }}\"\n      }\n    },\n    {\n      \"updateTextStyle\": {\n        \"objectId\": \"main_title_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"fontFamily\": \"Roboto\",\n          \"fontSize\": {\n            \"magnitude\": 48,\n            \"unit\": \"PT\"\n          },\n          \"foregroundColor\": {\n            \"opaqueColor\": {\n              \"rgbColor\": {\n                \"red\": 0.2,\n                \"green\": 0.3,\n                \"blue\": 0.25\n              }\n            }\n          },\n          \"bold\": true\n        },\n        \"fields\": \"fontFamily,fontSize,foregroundColor,bold\"\n      }\n    },\n    {\n      \"updateParagraphStyle\": {\n        \"objectId\": \"main_title_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"alignment\": \"START\",\n          \"lineSpacing\": 110\n        },\n        \"fields\": \"alignment,lineSpacing\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"description_{{ $runIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 60,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 400,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 56,\n            \"translateY\": 193,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"description_{{ $runIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $('Loop Over Items').item.json.subtitle || 'Subtitle' }}\"\n      }\n    },\n    {\n      \"updateTextStyle\": {\n        \"objectId\": \"description_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"fontFamily\": \"Open Sans\",\n          \"fontSize\": {\n            \"magnitude\": 16,\n            \"unit\": \"PT\"\n          },\n          \"foregroundColor\": {\n            \"opaqueColor\": {\n              \"rgbColor\": {\n                \"red\": 0.4,\n                \"green\": 0.4,\n                \"blue\": 0.4\n              }\n            }\n          }\n        },\n        \"fields\": \"fontFamily,fontSize,foregroundColor\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"slide_{{ $runIndex }}\",\n          \"size\": {\n            \"height\": {\n              \"magnitude\": 120,\n              \"unit\": \"PT\"\n            },\n            \"width\": {\n              \"magnitude\": 625,\n              \"unit\": \"PT\"\n            }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 56,\n            \"translateY\": 235,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $('Loop Over Items').item.json.bullets.join('\\\\n') }}\"\n      }\n    },\n    {\n      \"createParagraphBullets\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"bulletPreset\": \"BULLET_DISC_CIRCLE_SQUARE\"\n      }\n    },\n    {\n      \"updateTextStyle\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"fontFamily\": \"Open Sans\",\n          \"fontSize\": {\n            \"magnitude\": 14,\n            \"unit\": \"PT\"\n          },\n          \"foregroundColor\": {\n            \"opaqueColor\": {\n              \"rgbColor\": {\n                \"red\": 0.35,\n                \"green\": 0.35,\n                \"blue\": 0.35\n              }\n            }\n          }\n        },\n        \"fields\": \"fontFamily,fontSize,foregroundColor\"\n      }\n    },\n    {\n      \"updateParagraphStyle\": {\n        \"objectId\": \"bullet_box_{{ $runIndex }}\",\n        \"textRange\": {\n          \"type\": \"ALL\"\n        },\n        \"style\": {\n          \"alignment\": \"START\",\n          \"lineSpacing\": 140,\n          \"spaceAbove\": {\n            \"magnitude\": 3,\n            \"unit\": \"PT\"\n          },\n          \"spaceBelow\": {\n            \"magnitude\": 3,\n            \"unit\": \"PT\"\n          },\n          \"indentStart\": {\n            \"magnitude\": 16,\n            \"unit\": \"PT\"\n          }\n        },\n        \"fields\": \"alignment,lineSpacing,spaceAbove,spaceBelow,indentStart\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4688,
+        1136
+      ],
+      "id": "6c253609-2ff9-4637-ab65-cf83b613dc03",
+      "name": "Google Slides - HQ Style 1",
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "IGOTBKmMxStA6lfo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        3568,
+        1552
+      ],
+      "id": "02eab25b-4431-4f37-b095-e147c348e505",
+      "name": "Lesson Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Just pass through the course data\nreturn [{ json: $input.first().json }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3760,
+        1552
+      ],
+      "id": "431e2a79-0228-4adc-bf3f-3fa6be366c8e",
+      "name": "Pass Through"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract curriculum and course metadata\nconst courseData = $input.first().json;\nconst curriculum = courseData.curriculum;\nconst courseTitle = courseData.title;\nconst courseDescription = courseData.description;\nconst learningObjectives = courseData.learningObjectives;\n\n// Create items for each lesson with relevant context\nreturn curriculum.map((lesson, index) => ({\n  json: {\n    lesson: lesson,\n    courseContext: {\n      title: courseTitle,\n      description: courseDescription.substring(0, 500) + '...', // Truncate for context\n      learningObjectives: learningObjectives.slice(0, 5), // First 5 objectives\n      totalLessons: curriculum.length\n    },\n    lessonNumber: index + 1,\n    total_slides: 10\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3952,
+        1552
+      ],
+      "id": "89de1343-2b6a-450e-b7dc-d8eb1592bb8a",
+      "name": "Extract Lessons & Context"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4160,
+        1552
+      ],
+      "id": "13ca5950-2bfa-47ac-b055-fb8030b71599",
+      "name": "Loop Over Lessons"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slides.googleapis.com/v1/presentations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSlidesOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{ $json.courseContext.title }} - Lesson {{ $json.lessonNumber }}: {{ $json.lesson.title }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4368,
+        1552
+      ],
+      "id": "3b36837f-2fa0-4dc9-a016-adfa51c95923",
+      "name": "Create Lesson Presentation",
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "IGOTBKmMxStA6lfo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI presentation builder. Create slides for this specific lesson.\n\n**CRITICAL: Return ONLY valid JSON array. Do NOT wrap in markdown code blocks or add any explanatory text.**\n\n**Course Context:**\n- Course: {{ $('Extract Lessons & Context').item.json.courseContext.title }}\n- Lesson {{ $('Extract Lessons & Context').item.json.lessonNumber }} of {{ $('Extract Lessons & Context').item.json.courseContext.totalLessons }}\n\n**Current Lesson Details:**\n- Week: {{ $('Extract Lessons & Context').item.json.lesson.week }}\n- Title: {{ $('Extract Lessons & Context').item.json.lesson.title }}\n- Objective: {{ $('Extract Lessons & Context').item.json.lesson.objective }}\n- Topics: {{ $('Extract Lessons & Context').item.json.lesson.topics.join(', ') }}\n- Demo: {{ $('Extract Lessons & Context').item.json.lesson.demo }}\n- Core Task: {{ $('Extract Lessons & Context').item.json.lesson.core_task }}\n- Sub Tasks: {{ $('Extract Lessons & Context').item.json.lesson.sub_tasks.join('; ') }}\n\nGenerate {{ $('Extract Lessons & Context').item.json.total_slides }} slides. Structure should include:\n- Slide 1: Title slide with lesson title and week number\n- Slide 2: Learning objectives for this specific lesson\n- Slides 3-8: Break down the topics, demo, and tasks into digestible content\n- Slide 9: Core task and sub-tasks summary\n- Slide 10: Next steps or key takeaways\n\n**RETURN FORMAT - Start your response with [ and end with ]:**\n[\n  {\n    \"title\": \"Slide Title\",\n    \"subtitle\": \"Slide Subtitle\",\n    \"bullets\": [\"Point 1\", \"Point 2\", \"Point 3\", \"Point 4\", \"Point 5\"]\n  }\n]\n\nEach slide must have exactly 5 bullet points. Response must be valid JSON only - no markdown, no explanations, no code blocks.",
+        "options": {
+          "systemMessage": "=\"You are a JSON-only response system. You must ALWAYS return valid JSON arrays without any markdown formatting, code blocks, or explanatory text. Never use ```json``` or ``` in your responses. Start directly with [ and end with ]. Ensure all JSON is properly formatted with correct quotes, commas, and brackets.\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        4560,
+        1552
+      ],
+      "id": "bdf0b5d9-354a-4e2b-a60c-0c69f872a085",
+      "name": "AI Agent - Generate Lesson Slides"
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = $input.item.json.output;\n\n// Clean up potential markdown formatting\noutput = output.replace(/^```json\\s*/, ''); // Remove opening ```json\noutput = output.replace(/\\s*```$/, ''); // Remove closing ```\noutput = output.replace(/^```\\s*/, ''); // Remove opening ``` \noutput = output.trim(); // Remove whitespace\n\n// Ensure it starts with [ and ends with ]\nif (!output.startsWith('[')) {\n  throw new Error('AI output does not start with [. Output: ' + output.substring(0, 100));\n}\nif (!output.endsWith(']')) {\n  throw new Error('AI output does not end with ]. Output: ' + output.substring(output.length - 100));\n}\n\ntry {\n  const slides = JSON.parse(output);\n  const lessonNumber = $('Loop Over Lessons').item.json.lessonNumber;\n  const presentationId = $('Create Lesson Presentation').item.json.presentationId;;\n\n  return slides.map((slide, index) => ({\n    json: {\n      ...slide,\n      slideIndex: index,\n      lessonNumber: lessonNumber,\n      presentationId: presentationId,\n    }\n  }));\n} catch (error) {\n  throw new Error('Failed to parse AI output as JSON. Error: ' + error.message + '. Output: ' + output.substring(0, 200));\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4864,
+        1552
+      ],
+      "id": "a4252749-a7d3-4ea6-925f-65f28fb11067",
+      "name": "Process Slides"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        5088,
+        1552
+      ],
+      "id": "03baeafc-a05a-48af-a9cc-ded05120d794",
+      "name": "Loop Over Slides"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://slides.googleapis.com/v1/presentations/{{ $('Create Lesson Presentation').item.json.presentationId }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSlidesOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"createSlide\": {\n        \"objectId\": \"lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"slideLayoutReference\": {\n          \"predefinedLayout\": \"BLANK\"\n        }\n      }\n    },\n    {\n      \"updatePageProperties\": {\n        \"objectId\": \"lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"pageProperties\": {\n          \"pageBackgroundFill\": {\n            \"solidFill\": {\n              \"color\": {\n                \"rgbColor\": {\n                  \"red\": 0.98,\n                  \"green\": 0.98, \n                  \"blue\": 0.98\n                }\n              },\n              \"alpha\": 1.0\n            }\n          }\n        },\n        \"fields\": \"pageBackgroundFill\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"title_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n          \"size\": {\n            \"height\": { \"magnitude\": 89, \"unit\": \"PT\" },\n            \"width\": { \"magnitude\": 681, \"unit\": \"PT\" }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 20,\n            \"translateY\": 51,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"title_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $json.title }}\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"subtitle_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n          \"size\": {\n            \"height\": { \"magnitude\": 43, \"unit\": \"PT\" },\n            \"width\": { \"magnitude\": 420, \"unit\": \"PT\" }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 20,\n            \"translateY\": 140,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"subtitle_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $json.subtitle || 'Lesson ' + $json.lessonNumber }}\"\n      }\n    },\n    {\n      \"createShape\": {\n        \"objectId\": \"bullets_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"shapeType\": \"TEXT_BOX\",\n        \"elementProperties\": {\n          \"pageObjectId\": \"lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n          \"size\": {\n            \"height\": { \"magnitude\": 197, \"unit\": \"PT\" },\n            \"width\": { \"magnitude\": 469, \"unit\": \"PT\" }\n          },\n          \"transform\": {\n            \"scaleX\": 1,\n            \"scaleY\": 1,\n            \"translateX\": 20,\n            \"translateY\": 194,\n            \"unit\": \"PT\"\n          }\n        }\n      }\n    },\n    {\n      \"insertText\": {\n        \"objectId\": \"bullets_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"insertionIndex\": 0,\n        \"text\": \"{{ $json.bullets.join('\\\\n') }}\"\n      }\n    },\n    {\n      \"createParagraphBullets\": {\n        \"objectId\": \"bullets_lesson_{{ $json.lessonNumber }}_slide_{{ $json.slideIndex }}\",\n        \"textRange\": { \"type\": \"ALL\" },\n        \"bulletPreset\": \"BULLET_DISC_CIRCLE_SQUARE\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5280,
+        1568
+      ],
+      "id": "22162907-ebad-401b-8e54-d74c4cddc4a8",
+      "name": "Create Individual Slide",
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "IGOTBKmMxStA6lfo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5488,
+        1552
+      ],
+      "id": "bc1d1a70-ea67-4838-b630-7c8a73ed0ffc",
+      "name": "Wait Between Slides",
+      "webhookId": "4c5432cf-7412-4259-9a9a-92cb299cb1d7"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5392,
+        1936
+      ],
+      "id": "71e620a1-8602-446d-b2b5-672bbe5b5e51",
+      "name": "Wait Between Lessons",
+      "webhookId": "c1ef13d2-42f6-46d7-9d65-bf62adddc732"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4560,
+        1760
+      ],
+      "id": "b18aad9d-d3d1-44a2-bc14-c91f60fb14a4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Lesson Content": {
+      "main": [
+        [
+          {
+            "node": "Pass Through",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pass Through": {
+      "main": [
+        [
+          {
+            "node": "Extract Lessons & Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Lessons & Context": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Lessons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Lessons": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create Lesson Presentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lesson Presentation": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Generate Lesson Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Generate Lesson Slides": {
+      "main": [
+        [
+          {
+            "node": "Process Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Slides": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Slides": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Lessons",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Individual Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Individual Slide": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Slides": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Lessons": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Generate Lesson Slides",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Lesson Content": [
+      {
+        "title": "AI Freelancing Mastery",
+        "description": "This 16-module video course is designed to transform aspiring individuals into successful AI freelancers, guiding them from foundational concepts to acquiring their first paid clients.\n\n💡 [**View the Full Presentation Here**](https://gamma.app/docs/12-Week-DevOps-Engineering-Masterclass-5tmjl2ydr784sv9)\n\n**What You'll Learn:**\n- Master various freelancing models and AI niches.\n- Understand AI fundamentals, capabilities, and ethical guidelines.\n- Set up essential AI freelancing tools and a productive workspace.\n- Develop effective prompt engineering skills for diverse AI tasks.\n- Create compelling social media content and long-form articles using AI.\n- Craft persuasive sales copy, landing pages, and content for repurposing.\n- Utilize AI for summaries, research, transcription, visuals, and presentations.\n- Build simple chatbots and automate workflows.\n- Package and price AI services effectively with tiered offers.\n- Build strong online profiles, portfolios, and compelling gig listings.\n- Master client outreach, proposal writing, and cold pitching.\n- Implement efficient client onboarding, delivery, and invoicing processes.\n- Launch an AI freelancing business and acquire initial clients.\n\n**Prerequisites:**\n- Internet access\n- Basic computer literacy\n- A desire to start or grow a freelancing career\n- Willingness to learn and apply AI tools",
+        "durationWeeks": 16,
+        "difficultyLevel": "Beginner",
+        "category": "AI & Freelancing",
+        "icon": "💸",
+        "colorScheme": {
+          "primary": "#4F46E5",
+          "secondary": "#C651CD"
+        },
+        "prerequisites": [
+          "Internet access",
+          "Basic computer literacy",
+          "A desire to start or grow a freelancing career",
+          "Willingness to learn and apply AI tools"
+        ],
+        "learningObjectives": [
+          "Master various freelancing models and AI niches.",
+          "Understand AI fundamentals, capabilities, and ethical guidelines.",
+          "Set up essential AI freelancing tools and a productive workspace.",
+          "Develop effective prompt engineering skills for diverse AI tasks.",
+          "Create compelling social media content and long-form articles using AI.",
+          "Craft persuasive sales copy, landing pages, and content for repurposing.",
+          "Utilize AI for summaries, research, transcription, visuals, and presentations.",
+          "Build simple chatbots and automate workflows.",
+          "Package and price AI services effectively with tiered offers.",
+          "Build strong online profiles, portfolios, and compelling gig listings.",
+          "Master client outreach, proposal writing, and cold pitching.",
+          "Implement efficient client onboarding, delivery, and invoicing processes.",
+          "Launch an AI freelancing business and acquire initial clients."
+        ],
+        "curriculum": [
+          {
+            "week": 1,
+            "title": "Freelancing Mindset & Roadmap",
+            "objective": "Understand different freelancing models and adopt a problem-solver mindset to identify potential AI gig ideas.",
+            "topics": [
+              "Freelancing models (gig / hourly / retainer)",
+              "AI niches",
+              "Mindset shift from job-seeker to problem-solver"
+            ],
+            "demo": "Browse Fiverr/Upwork for AI gigs",
+            "core_task": "Write down 2 gig ideas to test",
+            "sub_tasks": [
+              "Research top AI-related services on platforms like Fiverr and Upwork.",
+              "Identify two distinct problems or needs that AI could solve for potential clients.",
+              "Formulate two specific AI gig ideas that address these identified needs.",
+              "Briefly describe each gig idea, outlining the service offered."
+            ],
+            "videoUrl": "https://your-video-host.com/ai-video-01.mp4"
+          },
+          {
+            "week": 2,
+            "title": "AI Fundamentals for Freelancers",
+            "objective": "Grasp the core capabilities and limitations of AI, including ethical considerations, to effectively leverage it in freelancing.",
+            "topics": [
+              "What AI can/can’t do",
+              "Ethical guardrails"
+            ],
+            "demo": "Generate 3 outputs (post, description, summary)",
+            "core_task": "'3 things AI can do for me'",
+            "sub_tasks": [
+              "Experiment with an AI tool (e.g., ChatGPT) to understand its capabilities.",
+              "Generate examples of how AI can assist with content creation (e.g., a social media post, product description, summary).",
+              "List three practical ways AI can directly benefit your freelancing workflow."
+            ],
+            "videoUrl": "https://your-video-host.com/ai-video-02.mp4"
+          },
+          {
+            "week": 3,
+            "title": "Tools Setup",
+            "objective": "Set up essential AI freelancing tools and organize a workspace for efficient client management and project delivery.",
+            "topics": [
+              "ChatGPT",
+              "Canva",
+              "Notion",
+              "Fiverr/Upwork"
+            ],
+            "demo": "Build a Notion client tracker + Google Form intake",
+            "core_task": "Set up workspace & accounts",
+            "sub_tasks": [
+              "Create accounts on essential freelancing platforms like Fiverr and Upwork.",
+              "Set up a project management system, such as a Notion client tracker.",
+              "Configure a client intake form using a tool like Google Forms.",
+              "Organize your digital workspace for efficient freelancing operations."
+            ],
+            "videoUrl": "https://your-video-host.com/ai-video-03.mp4"
+          },
+          {
+            "week": 4,
+            "title": "Prompt Engineering Basics",
+            "objective": "Learn the fundamentals of prompt engineering to create reproducible and high-quality outputs from AI models for specific gig niches.",
+            "topics": [
+              "Prompt anatomy",
+              "Reproducibility"
+            ],
+            "demo": "Bad → improved prompt example",
+            "core_task": "Create 3 prompts for your gig niche",
+            "sub_tasks": [
+              "Choose a specific niche for your AI freelancing gigs.",
+              "Draft three distinct prompts tailored to generate specific outputs relevant to your niche.",
+              "Test each prompt with an AI model and refine them for reproducibility and quality.",
+              "Document your effective prompts for future use."
+            ],
+            "videoUrl": "https://your-video-host.com/ai-video-04.mp4"
+          },
+          {
+            "week": 5,
+            "title": "Social Media Content Creation",
+            "objective": "Utilize AI and design tools to rapidly generate engaging micro-content packs for social media platforms.",
+            "topics": [
+              "Why micro-content sells",
+              "Post templates"
+            ],
+            "demo": "Generate 7 posts in Canva + ChatGPT",
+            "core_task": "Build a 1-week content pack",
+            "sub_tasks": [
+              "Identify a client or personal brand for whom to create content.",
+              "Use ChatGPT to brainstorm and generate ideas for 7 social media posts.",
+              "Design visual templates for these posts in Canva.",
+              "Assemble your text and visuals into a cohesive 1-week content pack."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 6,
+            "title": "SEO Blogs & Long-form Content",
+            "objective": "Employ AI to outline and draft SEO-optimized blog posts and other long-form content.",
+            "topics": [
+              "Blog structure",
+              "Keyword basics"
+            ],
+            "demo": "Outline + 600-word draft",
+            "core_task": "Write your first draft blog",
+            "sub_tasks": [
+              "Select a topic and target keyword for your blog post.",
+              "Use AI to generate an outline based on your keyword and topic.",
+              "Draft a 600-word blog post using AI assistance, following your outline.",
+              "Review and edit the draft for coherence and accuracy."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 7,
+            "title": "Sales Copywriting & Landing Pages",
+            "objective": "Craft persuasive sales copy, including ad headlines and landing page content, using proven copywriting principles and AI assistance.",
+            "topics": [
+              "AIDA",
+              "CTA",
+              "Headline principles"
+            ],
+            "demo": "Landing page copy in Google Docs",
+            "core_task": "Write 3 ad headlines + a landing",
+            "sub_tasks": [
+              "Choose a product or service for which to create sales copy.",
+              "Apply AIDA principles to craft three compelling ad headlines.",
+              "Outline the structure of a landing page for the chosen product/service.",
+              "Write the full landing page copy in a document, including a clear Call to Action."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 8,
+            "title": "Repurposing & Scaling Content",
+            "objective": "Transform a single piece of content into multiple assets for diverse platforms, maximizing reach and efficiency.",
+            "topics": [
+              "From one piece → many assets"
+            ],
+            "demo": "Turn blog into 5 LinkedIn posts + 1 email",
+            "core_task": "Repurpose a piece into 3 formats",
+            "sub_tasks": [
+              "Select an existing piece of content (e.g., a blog post, video script).",
+              "Transform the original content into at least three new formats (e.g., LinkedIn posts, email newsletter, infographic text).",
+              "Ensure each new format is optimized for its respective platform."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 9,
+            "title": "Summaries, Research & Transcription",
+            "objective": "Leverage AI to efficiently summarize content, conduct research, and transcribe audio/video, meeting market demand for these services.",
+            "topics": [
+              "Market demand for notes",
+              "Transcripts",
+              "Research"
+            ],
+            "demo": "Summarize a YouTube video into a 1-page brief",
+            "core_task": "Create a research brief",
+            "sub_tasks": [
+              "Identify a topic or specific question requiring research.",
+              "Utilize AI to summarize a long piece of content, such as a YouTube video or article.",
+              "Extract key insights and data points from the summarized information.",
+              "Compile the findings into a concise, one-page research brief."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 10,
+            "title": "Visuals & Presentations",
+            "objective": "Design professional-grade visuals and presentations using AI and tools like Canva to enhance client communication and project delivery.",
+            "topics": [
+              "Canva + AI basics",
+              "Slide design"
+            ],
+            "demo": "Make a 6-slide pitch deck",
+            "core_task": "Create a deck or thumbnail",
+            "sub_tasks": [
+              "Choose between creating a 6-slide pitch deck or a YouTube thumbnail.",
+              "If creating a deck, use Canva and AI to design visually appealing slides.",
+              "If creating a thumbnail, design an eye-catching graphic suitable for video content.",
+              "Ensure the visual asset effectively communicates its intended message."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 11,
+            "title": "Chatbots & Automation",
+            "objective": "Understand no-code chatbot builders and automation tools to create simple intelligent agents and streamline freelancing workflows.",
+            "topics": [
+              "No-code bot builders",
+              "Zapier basics"
+            ],
+            "demo": "Build a simple FAQ chatbot",
+            "core_task": "Map a chatbot flow",
+            "sub_tasks": [
+              "Identify a common customer service scenario or FAQ for a hypothetical business.",
+              "Design a simple conversation flow for an FAQ chatbot.",
+              "Outline the questions the bot will ask and the responses it will provide.",
+              "Consider decision points and user pathways within the chatbot's interaction."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 12,
+            "title": "Packaging & Pricing",
+            "objective": "Develop a competitive and profitable three-tiered offering for AI freelancing services, clearly defining value and pricing.",
+            "topics": [
+              "3-tier offers",
+              "Bronze/Silver/Gold example"
+            ],
+            "demo": "Pricing sheet in Canva",
+            "core_task": "Build your 3-tier offer",
+            "sub_tasks": [
+              "Identify your core AI freelancing service.",
+              "Define three distinct service packages (e.g., Bronze, Silver, Gold).",
+              "Outline the specific deliverables and value proposition for each tier.",
+              "Determine the pricing structure for your three-tier offer."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 13,
+            "title": "Profiles & Portfolio",
+            "objective": "Create compelling online profiles and portfolio pieces that attract clients and showcase AI freelancing capabilities.",
+            "topics": [
+              "Gig headline formula",
+              "Profile tips"
+            ],
+            "demo": "Write Fiverr gig + Upwork profile live",
+            "core_task": "Publish 1 gig draft",
+            "sub_tasks": [
+              "Select your best AI freelancing gig idea.",
+              "Write a compelling gig headline and description for a platform like Fiverr.",
+              "Populate your profile with relevant skills, experience, and a professional photo.",
+              "Draft and publish your first gig, ready for client review."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 14,
+            "title": "Outreach & Proposals",
+            "objective": "Master the art of cold outreach and proposal writing to effectively secure new AI freelancing clients.",
+            "topics": [
+              "Cold outreach structure",
+              "Proposal anatomy"
+            ],
+            "demo": "Write a cold DM + Upwork proposal",
+            "core_task": "Send 3 practice proposals",
+            "sub_tasks": [
+              "Identify three suitable job postings or potential clients on freelancing platforms.",
+              "Craft a personalized cold DM script for outreach.",
+              "Write a tailored Upwork proposal for a specific job.",
+              "Practice sending these three proposals, focusing on customization and value."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 15,
+            "title": "Client Onboarding & Delivery",
+            "objective": "Establish professional client onboarding and project delivery processes, including contracts, revisions, and invoicing.",
+            "topics": [
+              "Contracts",
+              "Revisions",
+              "Invoices"
+            ],
+            "demo": "Onboarding form in Google Docs",
+            "core_task": "Draft your onboarding checklist",
+            "sub_tasks": [
+              "Outline the key steps for bringing a new client into your workflow.",
+              "Design an onboarding form using a tool like Google Docs to gather client information.",
+              "Include sections for contract signing, project brief, and initial payment.",
+              "Create a comprehensive checklist to ensure smooth client onboarding and project initiation."
+            ],
+            "videoUrl": ""
+          },
+          {
+            "week": 16,
+            "title": "Capstone: Launch & First Client Sprint",
+            "objective": "Execute a full launch strategy, conduct outreach, and aim to secure the first paying clients for an AI freelancing business.",
+            "topics": [
+              "Launch checklist",
+              "Outreach strategy"
+            ],
+            "demo": "Publish a Fiverr gig + pitch log",
+            "core_task": "Send 20 pitches + submit capstone",
+            "sub_tasks": [
+              "Develop a strategic outreach plan for acquiring clients.",
+              "Execute your plan by sending 20 targeted pitches to potential clients.",
+              "Compile your pitch log, recording details of your outreach efforts.",
+              "Submit your comprehensive capstone project, including your launch checklist and pitch results."
+            ],
+            "videoUrl": ""
+          }
+        ],
+        "resources": [
+          "Slide template pack",
+          "Worksheet pages for tasks",
+          "Canva",
+          "Notion templates",
+          "Fiverr",
+          "Upwork",
+          "ChatGPT",
+          "Google Form",
+          "Google Docs",
+          "Zapier",
+          "Free AI tools"
+        ],
+        "assessmentCriteria": [
+          "Completion of weekly action tasks and assignments.",
+          "Development and refinement of AI gig ideas and offers.",
+          "Submission of a capstone project including a launch checklist and pitch log.",
+          "Demonstrated ability to create and repurpose AI-generated content and visuals.",
+          "Evidence of building and optimizing freelancing profiles and proposals."
+        ],
+        "targetJobRoles": [
+          "AI Freelancer",
+          "AI Content Creator",
+          "Prompt Engineer",
+          "AI Assistant",
+          "Digital Marketing Specialist (AI-enhanced)",
+          "Copywriter (AI-enhanced)",
+          "Freelance Virtual Assistant"
+        ],
+        "repoName": "Sprint-ai-freelancing-mastery"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contact_candidate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "33eb3f93-c385-4e33-900e-090492c50158",
+      "name": "Webhook",
+      "webhookId": "1ad5b4f2-edae-4100-abd2-3e581c047222"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1412020482542407833",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1412020483125153795",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "https://discord.com/channels/1412020482542407833/1412020483125153795"
+        },
+        "content": "=Candidate {{ $json.body.candidateName }} whose email is {{ $json.body.candidateEmail }} has been contacted by the company called {{ $json.body.companyName }}. \n\nPlease contact {{ $json.body.candidateName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        160,
+        0
+      ],
+      "id": "4ce53ca1-377f-40be-9084-13841b73f6ac",
+      "name": "Send a message",
+      "webhookId": "bacace10-f852-4794-a3bc-2da75c8f3db3",
+      "credentials": {
+        "discordOAuth2Api": {
+          "id": "um6rwXJHiepsBc2m",
+          "name": "Discord account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}
