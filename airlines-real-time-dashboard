@@ -131,7 +131,8 @@
         112
       ],
       "id": "7ad824e6-d68d-4696-95d8-c55d7a3ab62a",
-      "name": "weather"
+      "name": "weather",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -160,6 +161,28 @@
       ],
       "id": "cfc6f13a-3294-48de-bdfe-e02b4d90548e",
       "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "6260892504",
+        "text": "={{ $json.destination_city }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        208
+      ],
+      "id": "3e967eb6-1654-4183-a883-e46188e1a5b1",
+      "name": "Send a text message",
+      "webhookId": "a6552a60-ccb9-4a57-8233-ddab4043c72d",
+      "credentials": {
+        "telegramApi": {
+          "id": "7Ud8CP8zEaxHjsQP",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "connections": {
@@ -236,6 +259,13 @@
             "type": "main",
             "index": 1
           }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -264,6 +294,7 @@
   },
   "pinData": {},
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "446fe20ce5b4253f83fde1209dc8a2ae8abfaa880e28152ac62bfe0512953d67"
   }
 }
