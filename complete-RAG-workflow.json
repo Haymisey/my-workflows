@@ -1,0 +1,1793 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content || $json.data || $json.text || $json.concatenated_data }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "=file_id",
+                "value": "={{ $('Set File Info').first().json.file_id }}"
+              },
+              {
+                "name": "file_title",
+                "value": "={{ $('Set File Info').first().json.file_title }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "e3a5bd92-5bcd-4457-9ff5-abd0a44d488f",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        464,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "884aa7c1-d294-4059-8704-1821e438ca3d",
+      "name": "Extract Document Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        2352
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "f9ad6848-666b-486d-bcf4-d3c50eb4331a",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        2176
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Set File Info').item.json.file_type }}",
+                    "rightValue": "raw",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5fe78f9b-2ff3-4adc-954e-53bfce35c142"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "7a281017-63c3-4447-b759-a7f0816a687d",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -880,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2000,
+        2048
+      ],
+      "id": "dc1b43da-4cdb-4362-902a-0c45ad591346",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list",
+          "cachedResultName": "document_metadata"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Set File Info').item.json.file_id }}",
+            "title": "={{ $('Set File Info').item.json.file_title }}",
+            "url": "={{ $('Set File Info').item.json.file_url }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": true,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "schema",
+              "displayName": "schema",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1312,
+        2064
+      ],
+      "id": "9d066b6f-379f-4f3b-9e99-f0baa56f15fa",
+      "name": "Insert Document Metadata",
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "documents_pg",
+        "options": {
+          "columnNames": {
+            "values": {
+              "contentColumnName": "pageContent"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        2480
+      ],
+      "id": "4392bf26-c6e1-498b-b336-77b63ad4c677",
+      "name": "Postgres PGVector Store1",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM documents_pg WHERE metadata->>'file_id' = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Set File Info').item.json.file_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1648,
+        2064
+      ],
+      "id": "65658b2f-95eb-4a1d-aad3-b3772706b4ef",
+      "name": "Delete Old Data Rows",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM document_rows\nWHERE dataset_id LIKE '%' || $1 || '%';",
+        "options": {
+          "queryReplacement": "={{ $('Set File Info').item.json.file_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1472,
+        2224
+      ],
+      "id": "fae588e1-8356-4835-b31c-6300ec971171",
+      "name": "Delete Old Doc Rows",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        544,
+        2880
+      ],
+      "id": "16300605-7899-40f9-aaae-bd4e9ef64686",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "code": {
+          "execute": {
+            "code": "const { PromptTemplate } = require('@langchain/core/prompts');\n\nconst documentContent = $input.item.json?.data || $input.item.json?.text;\nconst maxChunkSize = 1000;\nconst minChunkSize = 400;\n\nif (!documentContent) {\n    throw new Error('No document found in input');\n}\n\nconst llm = await this.getInputConnectionData('ai_languageModel', 0);\n\nfunction cleanText(text) {\n    return text.replace(/\\s+/g, ' ').trim();\n}\n\nconst chunks = [];\nlet remainingText = cleanText(documentContent);\nlet chunkNumber = 1;\n\nif (remainingText.length <= maxChunkSize) {\n    chunks.push({\n        content: remainingText,\n        chunk: chunkNumber,\n        chunk_size: remainingText.length\n    });\n} else {\n    while (remainingText) {\n        const textToAnalyze = remainingText.substring(0, maxChunkSize);\n        \n        const promptText = `You are analyzing a document to find the best transition point to split it into meaningful sections.\n\nYour goal: Keep related content together and split where topics naturally transition.\n\nRead this text carefully and identify where one topic/section ends and another begins:\n\n${textToAnalyze}\n\nFind the best transition point that occurs BEFORE character position ${maxChunkSize}.\n\nLook for:\n- Section headings or topic changes\n- Paragraph boundaries where the subject shifts\n- Complete conclusions before new ideas start\n- Natural breaks between different aspects of the content\n\nOutput the LAST WORD that appears right before your chosen split point.\nJust the single word itself, nothing else.\nExample: If you want to split after \"The company was founded in 2022.\" then output: \"2022\"`;\n        \n        const prompt = PromptTemplate.fromTemplate(promptText);\n        const chain = prompt.pipe(llm);\n        \n        let breakPoint = maxChunkSize;\n        \n        try {\n            const response = await chain.invoke();\n            const responseText = response.content || response.text || response.toString();\n            const breakWord = responseText.trim();\n            \n            if (breakWord) {\n                // Find the last occurrence of this word in the text to analyze\n                const wordIndex = textToAnalyze.lastIndexOf(breakWord);\n                if (wordIndex !== -1) {\n                    // Split after the word (including any punctuation that follows)\n                    breakPoint = wordIndex + breakWord.length;\n                    // Move past any punctuation or single space after the word\n                    while (breakPoint < textToAnalyze.length && \n                           (textToAnalyze[breakPoint] === '.' || \n                            textToAnalyze[breakPoint] === '!' || \n                            textToAnalyze[breakPoint] === '?' || \n                            textToAnalyze[breakPoint] === ',' || \n                            textToAnalyze[breakPoint] === ';' || \n                            textToAnalyze[breakPoint] === ':' || \n                            textToAnalyze[breakPoint] === ' ')) {\n                        breakPoint++;\n                        // Stop after moving past one space\n                        if (textToAnalyze[breakPoint - 1] === ' ') break;\n                    }\n                    breakPoint = Math.min(breakPoint, maxChunkSize);\n                }\n            }\n        } catch (error) {\n            console.log('LLM failed to determine breakpoint, using max size:', error.message);\n            breakPoint = maxChunkSize;\n        }\n        \n        const chunk = remainingText.substring(0, breakPoint).trim();\n        \n        if (chunk) {\n            chunks.push({\n                content: chunk,\n                chunk: chunkNumber,\n                chunk_size: chunk.length\n            });\n            chunkNumber++;\n        }\n        \n        remainingText = remainingText.substring(breakPoint).trim();\n        \n        if (!remainingText) {\n            break;\n        }\n    }\n}\n\n// Merge chunks that are below minimum size with adjacent chunks if possible\nlet i = 0;\nwhile (i < chunks.length) {\n    if (chunks[i].chunk_size < minChunkSize) {\n        // Try to merge with next chunk first if it exists and won't exceed max\n        if (i + 1 < chunks.length && \n            chunks[i].chunk_size + chunks[i + 1].chunk_size <= maxChunkSize) {\n            // Merge current with next\n            chunks[i].content += ' ' + chunks[i + 1].content;\n            chunks[i].chunk_size = chunks[i].content.length;\n            chunks.splice(i + 1, 1);\n            // Don't increment i, check this chunk again in case it's still small\n        } \n        // Otherwise try to merge with previous chunk if it exists and won't exceed max\n        else if (i > 0 && \n                 chunks[i - 1].chunk_size + chunks[i].chunk_size <= maxChunkSize) {\n            // Merge current into previous\n            chunks[i - 1].content += ' ' + chunks[i].content;\n            chunks[i - 1].chunk_size = chunks[i - 1].content.length;\n            chunks.splice(i, 1);\n            // Don't increment i, we removed current chunk\n        } else {\n            // Can't merge without exceeding max, move on\n            i++;\n        }\n    } else {\n        i++;\n    }\n}\n\nconst returnData = chunks.map(chunk => ({\n    json: chunk\n}));\n\nreturn returnData;"
+          }
+        },
+        "inputs": {
+          "input": [
+            {
+              "type": "ai_languageModel",
+              "maxConnections": 1,
+              "required": true
+            },
+            {
+              "type": "main",
+              "required": true
+            }
+          ]
+        },
+        "outputs": {
+          "output": [
+            {
+              "type": "main"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.code",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        2176
+      ],
+      "id": "9e51f5e9-e783-4403-bcab-44b1ba0a2d2b",
+      "name": "LangChain Code"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a051fedf-457d-43d9-96f0-1b5d0da48f2a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2336,
+        1968
+      ],
+      "id": "1d06b29c-7d9f-4f46-9a9e-234e92fe3861",
+      "name": "Webhook1",
+      "webhookId": "a051fedf-457d-43d9-96f0-1b5d0da48f2a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10646eae-ae46-4327-a4dc-9987c2d76173",
+              "name": "file_id",
+              "value": "={{ $('Webhook1').item.json.body.public_id }}",
+              "type": "string"
+            },
+            {
+              "id": "77d782de-169d-4a46-8a8e-a3831c04d90f",
+              "name": "file_title",
+              "value": "={{ $('Webhook1').item.json.body.original_filename }}",
+              "type": "string"
+            },
+            {
+              "id": "9bde4d7f-e4f3-4ebd-9338-dce1350f9eab",
+              "name": "file_url",
+              "value": "={{ $('Webhook1').item.json.body.secure_url }}",
+              "type": "string"
+            },
+            {
+              "id": "11cc6387-a9f8-4399-84cb-53ada0e66fb7",
+              "name": "file_type",
+              "value": "={{ $json.body.resource_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d45186bd-74b2-4b89-a95f-b82684f8f630",
+      "name": "Set File Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1824,
+        2208
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set File Info').item.json.file_url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        2224
+      ],
+      "id": "8fcf599a-2cee-43af-89d3-cc411a623379",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "nvr0kvV8Yr4ZAAnn",
+          "name": "Cloudinary"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        272,
+        2704
+      ],
+      "id": "1b79c487-d666-4d12-abb2-c17c6fe62824",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        2384
+      ],
+      "id": "f6d51052-5b28-4572-a677-ee9ef51c44e3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE document_metadata (\n    id TEXT PRIMARY KEY,\n    title TEXT,\n    url TEXT,\n    created_at TIMESTAMP DEFAULT NOW(),\n    schema TEXT\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2768,
+        2208
+      ],
+      "id": "43632829-3c32-435d-a053-7fc5e232d8ac",
+      "name": "Create Document Metadata Table",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS documents_pg (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    \"pageContent\" TEXT,\n    metadata JSONB,\n    -- The embedding vector. 768 is the dimension for Google's text-embedding-004 model.\n    embedding VECTOR(768) \n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2480,
+        2208
+      ],
+      "id": "2c6633b7-2df9-424b-b8aa-e171c4142167",
+      "name": "Create Vector Store Table",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Book",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -2304,
+        1696
+      ],
+      "id": "ce5f028a-3692-4e46-b01c-1e313f9a1403",
+      "name": "On form submission",
+      "webhookId": "1de53a3e-fe23-4a0d-bd9d-0a71abec14f6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dpsgi008j/raw/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "Book"
+            },
+            {
+              "name": "upload_preset",
+              "value": "rag_pdf_upload"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2032,
+        1696
+      ],
+      "id": "37a6a3d1-8f02-456d-a50a-b100955907a7",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        752
+      ],
+      "id": "82eb705a-81c3-43e7-9d41-b80e3d2e4a72",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1264,
+        944
+      ],
+      "id": "f40d063e-b355-4f66-8a8c-f848f7746aa9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The schema definition remains the same. This is our \"data contract\".\nconst schemaDefinition = `\n{\n  title: string,\n  description: string,\n  durationWeeks: integer,\n  difficultyLevel: \"Beginger\" | \"Intermediate\" | \"Advanced\",\n  category: string,\n  icon: string (emoji),\n  colorScheme: { primary: string, secondary: string },\n  prerequisites: string[],\n  learningObjectives: string[],\n  curriculum: Array<{\n    week: integer,\n    title: string,\n    objective: string,\n    topics: string[],\n    demo: string,\n    core_task: string,\n    sub_tasks: string[],\n    videoUrl: string\n  }>,\n  resources: string[],\n  assessmentCriteria: string[],\n  targetJobRoles: string[]\n}\n`;\n\n// Get the user's high-level request from the body of the Notion page.\n// We rename 'sourceMaterial' to 'userRequest' for clarity.\nconst userRequest = $input.first().json.pageContent;\n\n// This logic for getting manual video URLs stays exactly the same.\nconst manualVideoUrls = $('Update Status').first().json.property_video_ur_ls_manual;\n\n// We can keep this for the description generation.\nconst presentationLink = \"https://gamma.app/docs/12-Week-DevOps-Engineering-Masterclass-5tmjl2ydr784sv9\";\n\n// Construct the NEW, RAG-focused master prompt for the AI Agent.\nconst prompt = `\nYou are an expert curriculum designer and data architect. Your mission is to create a complete, professional-grade course based on a user's request.\n\nYou have access to a knowledge base of expert books via your tools (RAG Retriever, Document Lister). You MUST use these tools to research the topic and ground your entire curriculum in the provided source material. Do not invent information that contradicts the context from your tools.\n\nYour final output must be a single, valid JSON object that perfectly matches the provided schema.\n\n**1. User's High-Level Request:**\n---\n${userRequest}\n---\n\n**2. Your Task & Detailed Instructions:**\n- **Step 1: Research.** Use your RAG tool to search the knowledge base for content relevant to the user's request. This is your primary source of truth.\n- **Step 2: Design the Curriculum.** Based ONLY on the knowledge you retrieve, design a full curriculum. Create logical weekly titles, objectives, topics, demos, core tasks, and sub-tasks. The quality and accuracy of the course must reflect the expert source material you found.\n- **Step 3: Populate All Fields.** Fill out every field in the schema. For the 'description' field, follow this specific format:\n    1. A compelling 1-2 sentence summary of the course you've designed.\n    2. A newline, then the text: \"💡 [**View the Full Presentation Here**](${presentationLink})\".\n    3. Two newlines, then the heading \"**What You'll Learn:**\", followed by a Markdown bulleted list of the key skills (must match the \\`learningObjectives\\` field).\n    4. Two newlines, then the heading \"**Prerequisites:**\", followed by a Markdown bulleted list of the required skills (must match the \\`prerequisites\\` field).\n- **Step 4: Handle Video URLs.** Use the provided manual list to assign video URLs. For any week without a URL in the list, you MUST return an empty string (\"\").\n\n**3. Manual Video URLs to Use:**\n---\n${manualVideoUrls}\n---\n\n**4. Output Schema (Your Final Answer MUST Conform to This):**\n${schemaDefinition}\n\n**5. Final Output Rules:**\n- Your response must be ONLY the raw JSON object.\n- Do not include any surrounding text, explanations, or markdown formatting.\n`;\n\n// The return statement is the same, sending the prompt to the AI Agent.\nreturn { prompt: prompt };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        944
+      ],
+      "id": "3fcc176a-1166-4747-9daf-83ac7375c923",
+      "name": "Prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node receives the AI Agent's output, cleans it, and parses it into a usable JSON object.\n\n// 1. Get the raw string output from the Agent node.\n// We expect the input to be an array of items, and we'll process the first one.\nconst agentOutput = $input.first().json.output;\n\nif (!agentOutput || typeof agentOutput !== 'string') {\n  throw new Error('Input from AI Agent node is missing or not a string.');\n}\n\n// 2. Clean the string by removing the Markdown JSON block markers.\n// This handles cases where the AI wraps its response in ```json ... ```\nconst cleanedString = agentOutput.replace(/^```json\\s*|\\s*```$/g, '');\n\n// 3. Parse the cleaned string into a JSON object.\n// We wrap this in a try...catch block to handle any potential malformed JSON from the AI.\n// This is the most critical step for workflow stability.\nlet parsedJson;\ntry {\n  parsedJson = JSON.parse(cleanedString);\n} catch (error) {\n  // If parsing fails, throw a clear error that n8n can display.\n  // This helps you immediately identify that the AI Agent produced invalid output.\n  console.error(\"Original AI Output that failed parsing:\", cleanedString);\n  throw new Error(`JSON Parsing Failed. Error: ${error.message}`);\n}\n\n// 4. Return the final, valid JSON object.\n// The next node in the workflow (e.g., a Postgres node) can now easily access all the fields.\n// Example: {{ $json.title }}, {{ $json.curriculum }}, etc.\nreturn [{\n  json: parsedJson\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        944
+      ],
+      "id": "19c154f9-550c-441d-a9cc-5e7ac540c0f2",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO learning_path_templates (\n  id,\n  title,\n  description,\n  duration_weeks,\n  difficulty_level,\n  category,\n  icon,\n  color_scheme,\n  prerequisites,\n  learning_objectives,\n  curriculum,\n  resources,\n  assessment_criteria,\n  target_job_roles,\n  template_repo_name\n) VALUES (\n  gen_random_uuid(),\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,  \n  $7,  \n  $8,\n  $9,\n  $10, \n  $11,\n  $12,\n  $13,\n  $14\n)",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Code').item.json.title,\n  $('Code').item.json.description,\n  $('Code').item.json.durationWeeks,\n  $('Code').item.json.difficultyLevel,\n  $('Code').item.json.category,\n  $('Code').item.json.icon,\n  JSON.stringify($('Code').item.json.colorScheme),\n  JSON.stringify($('Code').item.json.prerequisites),\n  JSON.stringify($('Code').item.json.learningObjectives),\n  JSON.stringify($('Code').item.json.curriculum),\n  JSON.stringify($('Code').item.json.resources),\n  JSON.stringify($('Code').item.json.assessmentCriteria),\n  JSON.stringify($('Code').item.json.targetJobRoles), \n$('Repo API').item.json.name\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        688
+      ],
+      "id": "0d1f2468-fd8a-4724-8c25-4de4d9ebfc21",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the full JSON object from the previous step\nconst data = $('Code2').first().json.curriculum;\n\n// The GitHub node needs an array of items to loop over automatically.\n// We just need to return the 'curriculum' array.\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        944
+      ],
+      "id": "163b995b-17e9-452c-a79e-7c71796e9cb4",
+      "name": "Curriculum"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Repo API').item.json.owner.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Repo API').item.json.name }}",
+          "mode": "name"
+        },
+        "filePath": "=submissions/week-{{ String($json.week).padStart(2, '0') }}/tasks/INSTRUCTION.md",
+        "fileContent": "={{ $json.weeklyReadmeContent }}",
+        "commitMessage": "feat: Initial Setup",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1216
+      ],
+      "id": "81fffe4a-9c5c-4976-9026-2da6bdc2b16d",
+      "name": "Create a file",
+      "webhookId": "70800718-1fe7-4b80-a753-03adc7b14aa0",
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/orgs/Learning-Sprints/repos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\t\"name\":\"{{ $json.repoName }}\",\n\t\"description\": \"Assessment repository for {{ $json.title }} sprint\",\n\t\"private\": true,\n\t\"auto_init\": true,\n\t\"gitignore_template\": \"Node\",\n\t\"license_template\": \"mit\",\n     \"is_template\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        944
+      ],
+      "id": "916857a5-5fc4-4568-a5ed-bcbfb2f0fe22",
+      "name": "Repo API",
+      "retryOnFail": false,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "OxySD6O3AA97iCVE",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const title = $json.title;\n\n// Convert to lowercase, replace spaces with dashes, remove invalid characters\nconst repoName = \"Sprint-\" + title\n  .toLowerCase()\n  .replace(/\\s+/g, '-')           // Replace spaces with -\n  .replace(/[^\\w\\-]+/g, '')       // Remove all non-word chars except -\n  .replace(/\\-\\-+/g, '-')         // Replace multiple - with single -\n  .replace(/^-+/, '')             // Trim - from start of text\n  .replace(/-+$/, '');            // Trim - from end of text\n\n$json.repoName = repoName;\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        944
+      ],
+      "id": "2bcc6117-36ca-43e2-90c8-b81c3a7a7f23",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// This node takes a SINGLE week's data as input and generates\n// the Markdown content for that week's README.md file.\n// It is designed to be used inside a loop.\n\n// The input for this node should be one item from the 'curriculum' array.\nconst weekData = $json;\n\n// --- Start Building the Markdown String ---\n\nlet markdownContent = \"\";\n\n// 1. Add the main title for the week\nmarkdownContent += `# Week ${weekData.week}: ${weekData.title}\\n\\n`;\n\n// 2. Add the objective in a blockquote to make it stand out\nmarkdownContent += `> **Objective:** *${weekData.objective}*\\n\\n`;\n\nmarkdownContent += `---\\n\\n`;\n\n// 3. List the topics that will be covered\nmarkdownContent += `## 📚 Topics Covered\\n\\n`;\nfor (const topic of weekData.topics) {\n  markdownContent += `- ${topic}\\n`;\n}\nmarkdownContent += `\\n`;\n\n// 4. Describe the live demo for context\nmarkdownContent += `## 💻 Live Demo Focus\\n\\n`;\nmarkdownContent += `${weekData.demo}\\n\\n`;\n\n// 5. Create the main action items and the sub-task checklist\nmarkdownContent += `## ✅ Your Action Items\\n\\n`;\nmarkdownContent += `**🎯 Main Goal:** ${weekData.core_task}\\n\\n`;\nmarkdownContent += `**Steps to Complete:**\\n`;\nfor (const task of weekData.sub_tasks) {\n  markdownContent += `- [ ] ${task}\\n`;\n}\n\n// --- End Building the Markdown String ---\n\n// 6. Add the generated markdown as a new field to the output object.\nweekData.weeklyReadmeContent = markdownContent;\n\n// 7. Return the modified object.\nreturn {\n  json: weekData\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1216
+      ],
+      "id": "7887eb96-3c73-4c77-9258-b30f6cb7deb5",
+      "name": "README"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2775ab78-439d-803b-8d10-e81ce3d44de0",
+          "mode": "list",
+          "cachedResultName": "courses",
+          "cachedResultUrl": "https://www.notion.so/2775ab78439d803b8d10e81ce3d44de0"
+        },
+        "title": "={{ $('Code').item.json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Course Name|rich_text",
+              "textContent": "={{ $('Code2').item.json.title }}"
+            },
+            {
+              "key": "Description|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $('Code2').item.json.description }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Category|select",
+              "selectValue": "={{ $('Code2').item.json.category }}"
+            },
+            {
+              "key": "Difficulty|select",
+              "selectValue": "={{ $('Code2').item.json.difficultyLevel }}"
+            },
+            {
+              "key": "Github Repo|url",
+              "ignoreIfEmpty": "={{ $('Code1').item.json.repoName }}",
+              "urlValue": "={{ $('Repo API').item.json.html_url }}"
+            },
+            {
+              "key": "Learning Objectives|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $('Code2').item.json.learningObjectives.map(objective => `- ${objective}`).join('\\n') }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Prerequisites|multi_select",
+              "multiSelectValue": "={{ $('Code2').item.json.prerequisites }}"
+            },
+            {
+              "key": "Resources|multi_select",
+              "multiSelectValue": "={{ $('Code2').item.json.resources }}"
+            },
+            {
+              "key": "Target Job Roles|multi_select",
+              "multiSelectValue": "={{ $('Code2').item.json.targetJobRoles }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "Upcoming"
+            },
+            {
+              "key": "Start Date|date",
+              "date": "={{ $now.toISODate() }}"
+            },
+            {
+              "key": "End Date|date",
+              "date": "={{ $now.plus({ weeks: $('Code').item.json.durationWeeks }).toISODate() }}"
+            },
+            {
+              "key": "Duration|number",
+              "numberValue": "={{ $('Code2').item.json.durationWeeks }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -80,
+        944
+      ],
+      "id": "4e9bb697-5881-4dd4-b9ab-d9801045877f",
+      "name": "Create Course",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2775ab78-439d-804f-afba-ce87d0bf3a6e",
+          "mode": "list",
+          "cachedResultName": "lessons",
+          "cachedResultUrl": "https://www.notion.so/2775ab78439d804fafbace87d0bf3a6e"
+        },
+        "title": "={{ $json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "courses|relation",
+              "relationValue": [
+                "={{ $('Create Course').item.json.id }}"
+              ]
+            },
+            {
+              "key": "Week|number",
+              "numberValue": "={{ $json.week }}"
+            },
+            {
+              "key": "Topics|multi_select",
+              "multiSelectValue": "={{ $json.topics }}"
+            },
+            {
+              "key": "Objective|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.objective }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Demo Focus|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.demo }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "videoUrl|url",
+              "ignoreIfEmpty": true,
+              "urlValue": "={{ $json.videoUrl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        944
+      ],
+      "id": "f5a23d0a-689a-4708-8628-406b8d6ce42b",
+      "name": "Create Lesson",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the entire input object\nconst item = $input.first();\nconst aiData = item.json;\n\n// --- 1. Clean the top-level 'resources' array (replaces commas) ---\nif (aiData.resources && Array.isArray(aiData.resources)) {\n  aiData.resources = aiData.resources.map(resource => resource.replace(/,/g, ' -'));\n}\n\n// --- 2. Split and clean the 'topics' array inside EACH lesson ---\nif (aiData.curriculum && Array.isArray(aiData.curriculum)) {\n  \n  // Go through each lesson object in the curriculum array\n  aiData.curriculum.forEach(lesson => {\n    \n    // Check if this specific lesson has a 'topics' array\n    if (lesson.topics && Array.isArray(lesson.topics)) {\n      \n      // Use flatMap to split the long strings into multiple, smaller strings\n      const cleanedAndSplitTopics = lesson.topics.flatMap(longTopicString => \n        longTopicString.split(',')\n          .map(part => part.trim()) // Clean up whitespace\n          .filter(part => part.length > 0) // Remove any empty parts\n      );\n      \n      // Replace the old topics array with the new, correct one\n      lesson.topics = cleanedAndSplitTopics;\n    }\n  });\n}\n\n// Return the entire, fully cleaned data object to the next node\nreturn item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        944
+      ],
+      "id": "da08cacd-c558-4457-ac50-1adc78db8133",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2775ab78-439d-8012-87b7-ed9730131579",
+          "mode": "list",
+          "cachedResultName": "assignments",
+          "cachedResultUrl": "https://www.notion.so/2775ab78439d801287b7ed9730131579"
+        },
+        "title": "=Assignment for: {{ $json.name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Assignment Name|rich_text",
+              "textContent": "=Assignment for: {{ $json.name }}"
+            },
+            {
+              "key": "Core Task|rich_text",
+              "textContent": "={{ $('Curriculum').item.json.core_task }}"
+            },
+            {
+              "key": "Sub Tasks|rich_text",
+              "textContent": "={{ $('Curriculum').item.json.sub_tasks.map(item => `- [ ] ${item}`).join('\\n') }}\n"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "upcoming"
+            },
+            {
+              "key": "lessons|relation",
+              "relationValue": [
+                "={{ $json.id }}"
+              ]
+            },
+            {
+              "key": "Due Date|date",
+              "includeTime": false,
+              "date": "={{ DateTime.fromISO($('Create Course').item.json.property_start_date.start).plus({ days: $('Create Lesson').item.json.property_week * 7 }).toISODate() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        944
+      ],
+      "id": "fb11c162-2b7d-40ba-b177-60fc77b75b23",
+      "name": "Create Assignment",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "value": "2795ab78-439d-8018-8d00-c9685a9707cb",
+          "mode": "list",
+          "cachedResultName": "handbooks",
+          "cachedResultUrl": "https://www.notion.so/2795ab78439d80188d00c9685a9707cb"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        960
+      ],
+      "id": "26c59267-ff33-400e-850b-1b622e75712d",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fa2043a1-1cc0-4de8-8d2d-86dab0ec4826",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Ready for Processing",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2208,
+        960
+      ],
+      "id": "b82c92e2-c6b4-49a1-bb1a-802794a07160",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|select",
+              "selectValue": "In Progress"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -1936,
+        944
+      ],
+      "id": "8f60a89b-e902-4762-9b27-5883d6dc64b3",
+      "name": "Update Status",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "simple": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -1744,
+        944
+      ],
+      "id": "cb9708b2-6e3e-4ef0-b35d-418a10c79e6d",
+      "name": "Get Full Page Content",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "simplifyOutput": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -1680,
+        1216
+      ],
+      "id": "7044f2fe-e016-4c54-9243-897ae5e320f6",
+      "name": "Get many child blocks",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const blocks = items; // input from previous node\nlet fullText = '';\n\nfor (const block of blocks) {\n  const type = block.json.type;\n  const contentArray = block.json[type]?.text || [];\n\n  for (const textObj of contentArray) {\n    fullText += textObj.text.content + '\\n';\n  }\n}\n\nreturn [{ json: { pageContent: fullText.trim() } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1472,
+        1216
+      ],
+      "id": "0ffb9903-1815-48e9-84f9-bd4edf716ce6",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Notion Trigger').first().json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|select",
+              "selectValue": "Completed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        944
+      ],
+      "id": "3dd3b5ad-d05c-4600-b934-6ece6dbbce7a",
+      "name": "Update as Complete",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1312,
+        1120
+      ],
+      "id": "9d80670f-ba01-4c11-90d1-406125798001",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use RAG to look up information in the knowledgebase.",
+        "tableName": "document_pg",
+        "topK": 25,
+        "useReranker": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        -896,
+        1168
+      ],
+      "id": "de255f8a-a085-45f0-aa86-a15f5fbad628",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1392
+      ],
+      "id": "41048784-57a9-485f-abdd-4bcf43e307a5",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch all available documents, including the table schema if the file is a CSV or Excel file.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list",
+          "cachedResultName": "document_metadata"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -1056,
+        1280
+      ],
+      "id": "b0562ae2-f2ea-49df-9aeb-03565cf18d27",
+      "name": "List Documents",
+      "credentials": {
+        "postgres": {
+          "id": "zLjbx1tA4ETGrzks",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        1392
+      ],
+      "id": "be2f1e4b-5515-4cdd-b5fd-e554624ffe54",
+      "name": "Reranker Cohere"
+    }
+  ],
+  "connections": {
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Document Text": {
+      "main": [
+        [
+          {
+            "node": "LangChain Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "LangChain Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Document Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set File Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Document Metadata": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Data Rows": {
+      "main": [
+        [
+          {
+            "node": "Insert Document Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Doc Rows": {
+      "main": [
+        []
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LangChain Code": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set File Info": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Data Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LangChain Code",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Curriculum": {
+      "main": [
+        [
+          {
+            "node": "Create Lesson",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "README",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repo API": {
+      "main": [
+        [
+          {
+            "node": "Create Course",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "README": {
+      "main": [
+        [
+          {
+            "node": "Create a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Course": {
+      "main": [
+        [
+          {
+            "node": "Curriculum",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lesson": {
+      "main": [
+        [
+          {
+            "node": "Create Assignment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Repo API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Assignment": {
+      "main": [
+        [
+          {
+            "node": "Update as Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Update Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status": {
+      "main": [
+        [
+          {
+            "node": "Get Full Page Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Full Page Content": {
+      "main": [
+        [
+          {
+            "node": "Get many child blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many child blocks": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reranker Cohere": {
+      "ai_reranker": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_reranker",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook1": [
+      {
+        "headers": {
+          "host": "automation.srv840082.hstgr.cloud",
+          "user-agent": "Cloudinary",
+          "content-length": "1091",
+          "accept-encoding": "gzip",
+          "content-type": "application/json",
+          "x-cld-signature": "ecfa9008ccf7eac82a33b76108c4366d9268c6fd",
+          "x-cld-signature-v2": "tA6p118Nwad00vpD7JmCVKJxX9BC-tdzUUnMiKfMF8vqQejdfHbsvyuHnZePaPeWK-Y92QEGINu6Tm5vel7iAg==",
+          "x-cld-timestamp": "1758845599",
+          "x-forwarded-for": "52.71.39.88",
+          "x-forwarded-host": "automation.srv840082.hstgr.cloud",
+          "x-forwarded-port": "443",
+          "x-forwarded-proto": "https",
+          "x-forwarded-server": "70e7ebb9947c",
+          "x-iorequest-id": "a97651471f19fe6754b5a99c934bc0f8",
+          "x-real-ip": "52.71.39.88",
+          "x-request-id": "a97651471f19fe6754b5a99c934bc0f8"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "notification_type": "upload",
+          "timestamp": "2025-09-26T00:13:19+00:00",
+          "request_id": "a97651471f19fe6754b5a99c934bc0f8",
+          "asset_id": "31a19e8b6094cc9de05041891ff90728",
+          "public_id": "rag/pdfs/Andrew_S._Tanenbaum_-_Modern_Operating_Systems_epzhbi.pdf",
+          "version": 1758845599,
+          "version_id": "6d5d03c03d308acec871bc9c3a5e0f56",
+          "resource_type": "raw",
+          "created_at": "2025-09-26T00:13:19Z",
+          "tags": [],
+          "bytes": 6556637,
+          "type": "upload",
+          "etag": "156cf9f53cc80458097cebf1876be746",
+          "placeholder": false,
+          "url": "http://res.cloudinary.com/dpsgi008j/raw/upload/v1758845599/rag/pdfs/Andrew_S._Tanenbaum_-_Modern_Operating_Systems_epzhbi.pdf",
+          "secure_url": "https://res.cloudinary.com/dpsgi008j/raw/upload/v1758845599/rag/pdfs/Andrew_S._Tanenbaum_-_Modern_Operating_Systems_epzhbi.pdf",
+          "asset_folder": "rag/pdfs",
+          "display_name": "Andrew S. Tanenbaum - Modern Operating Systems",
+          "existing": false,
+          "original_filename": "Andrew S. Tanenbaum - Modern Operating Systems",
+          "notification_context": {
+            "triggered_at": "2025-09-26T00:13:19.267018Z",
+            "triggered_by": {
+              "source": "unsigned_flow",
+              "id": "anonymous"
+            }
+          },
+          "signature_key": "882382219851683"
+        },
+        "webhookUrl": "https://automation.srv840082.hstgr.cloud/webhook/a051fedf-457d-43d9-96f0-1b5d0da48f2a",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}
