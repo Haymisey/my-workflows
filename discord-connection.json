@@ -1,0 +1,180 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ab8d97c8-3007-4a78-9eaf-78884971b4ba",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f02751cb-2a0b-4826-a0b3-84c7fc119f73",
+      "name": "Webhook",
+      "webhookId": "ab8d97c8-3007-4a78-9eaf-78884971b4ba"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/oauth2/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=client_id",
+              "value": "1412022225640493140"
+            },
+            {
+              "name": "client_secret",
+              "value": "1bIa8SibwpBPArV2DNdpxrRe2FWeoQGz"
+            },
+            {
+              "name": "grant_type",
+              "value": "authorization_code"
+            },
+            {
+              "name": "code",
+              "value": "={{ $json.body.code }}"
+            },
+            {
+              "name": "token",
+              "value": "={{ $json.body.token }}"
+            },
+            {
+              "name": "redirect_uri",
+              "value": "http://localhost:3000/api/discord/callback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "32069ce5-d064-40ff-bc94-481e5b2d856c",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "https://discord.com/api/users/@me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "cb9644f4-9b01-4d3f-91d6-d23944071d7f",
+      "name": "get user discord id"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "   UPDATE \"user\" \n   SET \n     \"discord_id\" = '{{ $json.id }}',\n     \"discord_link_token\" = NULL,\n     \"discord_token_expires_at\" = NULL\n   WHERE \"discord_link_token\" = '{{ $('Webhook').item.json.body.token }}'\n     AND \"discord_token_expires_at\" > NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        0
+      ],
+      "id": "34b74205-c212-4952-a26d-8c6973972bb2",
+      "name": "update user table",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "get user discord id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get user discord id": {
+      "main": [
+        [
+          {
+            "node": "update user table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "automation.srv840082.hstgr.cloud",
+          "user-agent": "node",
+          "content-length": "176",
+          "accept": "*/*",
+          "accept-encoding": "br, gzip, deflate",
+          "accept-language": "*",
+          "content-type": "application/json",
+          "sec-fetch-mode": "cors",
+          "x-forwarded-for": "196.188.180.233",
+          "x-forwarded-host": "automation.srv840082.hstgr.cloud",
+          "x-forwarded-port": "443",
+          "x-forwarded-proto": "https",
+          "x-forwarded-server": "70e7ebb9947c",
+          "x-real-ip": "196.188.180.233"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "code": "Lhe12CUH5i0QDwCyOh8DgblvxxNusD",
+          "token": "GSQZHW",
+          "redirectUri": "http://localhost:3000/api/discord/callback",
+          "callbackUrl": "http://localhost:3000/api/discord/callback"
+        },
+        "webhookUrl": "https://automation.srv840082.hstgr.cloud/webhook/ab8d97c8-3007-4a78-9eaf-78884971b4ba",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "5048f0d7-651f-45c0-8020-f315103cc98d",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1412020482542407833",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1412111775461019710",
+          "mode": "list",
+          "cachedResultName": "error-logger",
+          "cachedResultUrl": "https://discord.com/channels/1412020482542407833/1412111775461019710"
+        },
+        "content": "=Workflow Error:  {{ $json.workflow.name }}\n\nThe last node executes was: {{ $json.execution.lastNodeExecuted }}\n\nThe error message was: {{ $json.execution.error.message }}\n\nSee this execution here: {{ $json.execution.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "3eaa840a-f7e9-4493-a567-e2546d112d33",
+      "name": "Send a message1",
+      "webhookId": "a05c7b7a-7bf7-4cf9-8504-da7206d27422",
+      "credentials": {
+        "discordOAuth2Api": {
+          "id": "um6rwXJHiepsBc2m",
+          "name": "Discord account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

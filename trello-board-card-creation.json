@@ -1,0 +1,170 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -192
+      ],
+      "id": "39814b09-fb58-45a0-ba8a-ccfcf0d3b52a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "listId": "68da4f1ba34e0a3845da6918",
+        "name": "=Demo -  {{ $('Get Lesson').item.json.property_week }} - {{ $json.name }}",
+        "description": "=This is the demo focus for the lesson (module):\n{{ $('Get Lesson').item.json.property_lesson_id }}\n\nCourse Name: {{ $('Get Lessons Course').item.json.name }}\n\nWeek: {{ $('Get Lesson').item.json.property_week }}\n\nDemo Focus: {{ $('Get Lesson').item.json.property_demo_focus }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "e6769db1-da11-404f-ba3f-418ba5dcccb0",
+      "name": "Create a card",
+      "credentials": {
+        "trelloApi": {
+          "id": "9cyg9EZEalsJSIB9",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        0
+      ],
+      "id": "ae946769-3007-4646-aa73-726902f1f882",
+      "name": "Get Lesson",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.property_courses[0] }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "ede37757-02bc-40a0-adf1-d102ff07416e",
+      "name": "Get Lessons Course",
+      "executeOnce": false,
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "databaseId": {
+          "__rl": true,
+          "value": "2775ab78-439d-804f-afba-ce87d0bf3a6e",
+          "mode": "list",
+          "cachedResultName": "lessons",
+          "cachedResultUrl": "https://www.notion.so/2775ab78439d804fafbace87d0bf3a6e"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "8add104e-3ae7-4a1c-a137-bd11a716410c",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "ZwimG9zDjQ7QhKyP",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    },
+    "Create a card": {
+      "main": [
+        []
+      ]
+    },
+    "Get Lesson": {
+      "main": [
+        [
+          {
+            "node": "Get Lessons Course",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lessons Course": {
+      "main": [
+        [
+          {
+            "node": "Create a card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Lesson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}
