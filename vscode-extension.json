@@ -1,0 +1,400 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "17ebf299-f208-4162-99e7-5944117b9bcf",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        144
+      ],
+      "id": "7179daff-f8c3-466d-a80c-8dde070aa91a",
+      "name": "Webhook",
+      "webhookId": "17ebf299-f208-4162-99e7-5944117b9bcf"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.resource }}",
+                    "rightValue": "tasks",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9b4e470c-ae00-445e-b936-ae33bddae26c"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "96c4323c-ef00-46d4-8398-49483d25065a",
+                    "leftValue": "={{ $('Webhook').item.json.body.resource }}",
+                    "rightValue": "companyCertifications",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e4590be2-8350-4f2d-b13d-392d6989bddc",
+                    "leftValue": "={{ $('Webhook').item.json.body.resource }}",
+                    "rightValue": "skillCertifications",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "347815e3-c20c-4bfa-acb5-00e88c16c32c",
+                    "leftValue": "={{ $('Webhook').item.json.body.resource }}",
+                    "rightValue": "stats",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c9475bc2-f9ba-4960-ba33-a7c9258b143a",
+                    "leftValue": "={{ $('Webhook').item.json.body.resource }}",
+                    "rightValue": "hackathons",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        64,
+        112
+      ],
+      "id": "0a3f0dc6-8306-42e9-8506-384df12373be",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, email, github_username \nFROM \"user\" \nWHERE vscode_api_token = '{{ $json.body.token }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        144
+      ],
+      "id": "c6b76cfb-8712-48e3-afe4-154cfafca391",
+      "name": "Find user",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  t.id,\n  t.title,\n  t.description,\n  t.task_type,\n  t.category,\n  t.difficulty,\n  t.week,\n  t.created_at,\n  jr.title as job_role_title,\n  c.name as company_name,\n  eta.status as assignment_status,\n  eta.completed_at as assignment_completed_at,\n  eta.submitted_at as assignment_submitted_at,\n  eta.submission_url as assignment_submission_url,\n  eta.feedback as assignment_feedback,\n  eta.score as assignment_score\nFROM tasks t\nLEFT JOIN job_roles jr ON t.job_role_id = jr.id\nLEFT JOIN companies c ON jr.company_id = c.id\nLEFT JOIN enhanced_task_assignments eta ON t.id = eta.task_id AND eta.student_id = '{{ $('Find user').item.json.id }}'\nWHERE (\n  -- Job assessment tasks\n  (t.job_role_id IN (\n    SELECT activity_id::uuid -- <-- CAST APPLIED HERE\n    FROM student_history \n    WHERE student_id = '{{ $('Find user').item.json.id }}'\n      AND activity_type = 'job_assessment'\n      AND status = 'active'\n  ))\n  OR\n  -- Learning path tasks\n  (t.learning_path_template_id IN (\n    SELECT activity_id::uuid -- <-- AND CAST APPLIED HERE\n    FROM student_history \n    WHERE student_id = '{{ $('Find user').item.json.id }}'\n      AND activity_type = 'learning_path'\n      AND status = 'active'\n  ) AND t.week = (\n    SELECT current_week \n    FROM student_history \n    WHERE student_id = '{{ $('Find user').item.json.id }}'\n      AND activity_type = 'learning_path'\n      AND status = 'active'\n    LIMIT 1\n  ))\n)\nORDER BY eta.completed_at DESC NULLS LAST;",
+        "options": {
+          "queryReplacement": "={{ $('Find user').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        -160
+      ],
+      "id": "26f4964b-fb0e-443b-aaf3-775afeb84d6e",
+      "name": "tasks",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  jr.id as job_role_id,\n  jr.title as job_role_title,\n  jr.description as job_role_description,\n  jr.experience_level,\n  jr.location,\n  jr.type as job_type,\n  jr.salary_min,\n  jr.salary_max,\n  jr.status as job_status,\n  jr.created_at as job_created_at,\n\n  -- Assessment details\n  jra.id as assessment_id,\n  jra.title as assessment_title,\n  jra.description as assessment_description,\n  jra.difficulty,\n  jra.time_limit_hours,\n  jra.passing_score,\n  jra.assessment_structure,\n  jra.learning_plan,\n  jra.assessment_sprints,\n  jra.skill_validation,\n  jra.company_context,\n  jra.industry as assessment_industry,\n  jra.created_at as assessment_created_at,\n\n  -- GitHub Repository\n  jrr.github_repo_id,\n  jrr.github_repo_url,\n  jrr.github_repo_full_name,\n\n  -- Company details\n  c.id as company_id,\n  c.name as company_name,\n  c.description as company_description,\n  c.industry as company_industry,\n  c.size as company_size,\n  c.location as company_location,\n  c.website as company_website,\n\n  -- User's application status (nullable if not applied)\n  ja.id as application_id,\n  ja.status as application_status,\n  ja.created_at as application_created_at,\n\n  -- User's assessment result (nullable if not taken)\n  ear.id as result_id,\n  ear.score as assessment_score,\n  ear.technical_score,\n  ear.soft_skills_score,\n  ear.consistency_score,\n  ear.availability_score,\n  ear.passed as assessment_passed,\n  ear.assessment_data,\n  ear.started_at as assessment_started_at,\n  ear.completed_at as assessment_completed_at,\n  ear.created_at as result_created_at,\n\n  -- Task count\n  COUNT(t.id) as task_count\n\nFROM job_roles jr\nINNER JOIN job_role_assessments jra ON jr.id = jra.job_role_id\nINNER JOIN companies c ON jr.company_id = c.id\n-- LEFT JOIN to get GitHub repository information\nLEFT JOIN job_role_repositories jrr ON jr.id = jrr.job_role_id\n-- Show all jobs, but include user-specific info if available\nLEFT JOIN job_applications ja ON (\n  ja.job_role_id = jr.id \n  AND ja.user_id = '{{ $('Find user').item.json.id }}'\n)\nLEFT JOIN enhanced_assessment_results ear ON (\n  ear.job_role_id = jr.id \n  AND ear.user_id = '{{ $('Find user').item.json.id }}'\n)\nLEFT JOIN tasks t ON jr.id = t.job_role_id\n\nWHERE \n  jr.status = 'active'\n  AND jr.company_id != '00000000-0000-0000-0000-000000000000'\n\nGROUP BY \n  jr.id, jra.id, c.id, jrr.id, ja.id, ear.id\n\nORDER BY jr.created_at DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        32
+      ],
+      "id": "2b503b47-fbac-4072-a48e-668bff879f44",
+      "name": "company certifications",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  lpt.id as template_id,\n  lpt.title as sprint_title,\n  lpt.description as sprint_description,\n  lpt.duration_weeks as duration,\n  lpt.difficulty_level as difficulty,\n  lpt.category as skill_category,\n  lpt.icon,\n  lpt.color_scheme,\n  lpt.prerequisites,\n  lpt.learning_objectives,\n  lpt.curriculum,\n  lpt.resources,\n  lpt.assessment_criteria,\n  lpt.template_repo_name,\n  lpt.target_job_roles,\n  lpt.is_featured,\n  lpt.is_active,\n  lpt.sort_order,\n  lpt.created_by,\n  lpt.created_at,\n  lpt.updated_at,\n  \n  -- Count enrolled students\n  COUNT(slpa.id) as enrolled_students_count,\n  \n  -- Check if current user is enrolled\n  MAX(CASE WHEN slpa.student_id = '{{ $('Find user').item.json.id }}' THEN 1 ELSE 0 END) as is_user_enrolled,\n  \n  -- Get user's enrollment status if enrolled\n  MAX(CASE WHEN slpa.student_id = '{{ $('Find user').item.json.id }}' THEN slpa.status ELSE NULL END) as user_enrollment_status,\n  MAX(CASE WHEN slpa.student_id = '{{ $('Find user').item.json.id }}' THEN slpa.progress_percentage ELSE NULL END) as user_progress,\n  MAX(CASE WHEN slpa.student_id = '{{ $('Find user').item.json.id }}' THEN slpa.current_week ELSE NULL END) as user_current_week\n\nFROM learning_path_templates lpt\nLEFT JOIN student_learning_path_assignments slpa ON lpt.id = slpa.learning_path_template_id\nWHERE \n  lpt.is_active = true\nGROUP BY \n  lpt.id, lpt.title, lpt.description, lpt.duration_weeks, lpt.difficulty_level, \n  lpt.category, lpt.icon, lpt.color_scheme, lpt.prerequisites, lpt.learning_objectives, \n  lpt.curriculum, lpt.resources, lpt.assessment_criteria, lpt.template_repo_name, \n  lpt.target_job_roles, lpt.is_featured, lpt.is_active, lpt.sort_order, lpt.created_by, \n  lpt.created_at, lpt.updated_at\nORDER BY \n  lpt.is_featured DESC,  -- Featured sprints first\n  enrolled_students_count DESC,  -- Most popular by enrollment\n  lpt.sort_order ASC,  -- Then by sort order\n  lpt.created_at DESC;  -- Finally by newest",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        224
+      ],
+      "id": "97716165-3548-41b3-ab7d-bb085c759d55",
+      "name": "skill certification",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH student_info AS (\n  SELECT \n    up.user_id,\n    up.first_name,\n    up.last_name,\n    COALESCE(up.first_name || ' ' || up.last_name, s.name, up.user_id) as name,\n    COALESCE(s.email, up.user_id) as email,\n    COALESCE(s.id, NULL) as sprinter_id,  -- May be null if no sprinter record\n    s.started_at\n  FROM user_profiles up\n  LEFT JOIN sprinters s ON s.user_id = up.user_id\n  WHERE up.user_id = '{{ $('Find user').item.json.id }}' \n),\n\n-- Calculate week streak from task completions\nweek_activity AS (\n  -- From student_bucket_assignments (requires sprinter.id)\n  SELECT DISTINCT\n    DATE_TRUNC('week', sba.completed_at) as week_start,\n    DATE_TRUNC('week', sba.completed_at) + INTERVAL '6 days' as week_end\n  FROM student_bucket_assignments sba\n  INNER JOIN sprinters s ON sba.student_id = s.id\n  INNER JOIN student_info si ON s.user_id = si.user_id\n  WHERE sba.status = 'completed' \n    AND sba.completed_at IS NOT NULL\n  \n  UNION\n  \n  -- From assigned_tasks (uses userId directly)\n  SELECT DISTINCT\n    DATE_TRUNC('week', at.completed_at) as week_start,\n    DATE_TRUNC('week', at.completed_at) + INTERVAL '6 days' as week_end\n  FROM assigned_tasks at\n  INNER JOIN student_info si ON at.student_id = si.user_id\n  WHERE at.status = 'completed'\n    AND at.completed_at IS NOT NULL\n  \n  UNION\n  \n  -- From student_history (uses userId directly)\n  SELECT DISTINCT\n    DATE_TRUNC('week', sh.completion_date) as week_start,\n    DATE_TRUNC('week', sh.completion_date) + INTERVAL '6 days' as week_end\n  FROM student_history sh\n  INNER JOIN student_info si ON sh.student_id = si.user_id\n  WHERE sh.status = 'completed'\n    AND sh.completion_date IS NOT NULL\n),\n\n-- Calculate consecutive week streak\nweek_streak_calc AS (\n  SELECT \n    week_start,\n    week_end,\n    ROW_NUMBER() OVER (ORDER BY week_start DESC) as week_number,\n    week_start - (ROW_NUMBER() OVER (ORDER BY week_start DESC) * INTERVAL '7 days') as streak_group\n  FROM (\n    SELECT DISTINCT week_start, week_end FROM week_activity\n  ) wa\n  ORDER BY week_start DESC\n),\n\ncurrent_streak AS (\n  SELECT \n    COUNT(*) as week_streak\n  FROM week_streak_calc\n  WHERE streak_group = (\n    SELECT streak_group \n    FROM week_streak_calc \n    ORDER BY week_start DESC \n    LIMIT 1\n  )\n  AND week_end >= CURRENT_DATE - INTERVAL '7 days'\n),\n\n-- Tasks completed count\ntasks_completed AS (\n  -- From student_bucket_assignments\n  SELECT \n    COUNT(*) as total_completed\n  FROM student_bucket_assignments sba\n  INNER JOIN sprinters s ON sba.student_id = s.id\n  INNER JOIN student_info si ON s.user_id = si.user_id\n  WHERE sba.status = 'completed'\n  \n  UNION ALL\n  \n  -- From assigned_tasks\n  SELECT \n    COUNT(*) as total_completed\n  FROM assigned_tasks at\n  INNER JOIN student_info si ON at.student_id = si.user_id\n  WHERE at.status = 'completed'\n),\n\ntotal_tasks_completed AS (\n  SELECT COALESCE(SUM(total_completed), 0) as tasks_completed\n  FROM tasks_completed\n),\n\n-- Certifications completed (both job assessments and learning paths)\ncertifications_completed AS (\n  SELECT \n    COUNT(*) FILTER (WHERE activity_type = 'job_assessment') as job_assessment_certs,\n    COUNT(*) FILTER (WHERE activity_type = 'learning_path') as learning_path_certs,\n    COUNT(*) as total_certifications\n  FROM student_history sh\n  INNER JOIN student_info si ON sh.student_id = si.user_id\n  WHERE sh.certification_earned = true\n),\n\n-- Badge calculations\nbadge_earned AS (\n  SELECT \n    -- Task completion badges (highest level achieved)\n    CASE \n      WHEN (SELECT tasks_completed FROM total_tasks_completed) >= 100 THEN 'TASK_MASTER_100'\n      WHEN (SELECT tasks_completed FROM total_tasks_completed) >= 50 THEN 'TASK_MASTER_50'\n      WHEN (SELECT tasks_completed FROM total_tasks_completed) >= 25 THEN 'TASK_MASTER_25'\n      WHEN (SELECT tasks_completed FROM total_tasks_completed) >= 10 THEN 'TASK_MASTER_10'\n      ELSE NULL\n    END as task_badge,\n    \n    -- Week streak badges (highest level achieved)\n    CASE \n      WHEN (SELECT week_streak FROM current_streak) >= 52 THEN 'YEAR_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 26 THEN 'HALF_YEAR_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 12 THEN 'QUARTER_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 8 THEN 'TWO_MONTH_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 4 THEN 'MONTH_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 2 THEN 'TWO_WEEK_STREAK'\n      WHEN (SELECT week_streak FROM current_streak) >= 1 THEN 'WEEK_STREAK'\n      ELSE NULL\n    END as streak_badge,\n    \n    -- Certification badges (highest level achieved)\n    CASE \n      WHEN (SELECT total_certifications FROM certifications_completed) >= 10 THEN 'CERTIFICATION_MASTER_10'\n      WHEN (SELECT total_certifications FROM certifications_completed) >= 5 THEN 'CERTIFICATION_MASTER_5'\n      WHEN (SELECT total_certifications FROM certifications_completed) >= 3 THEN 'CERTIFICATION_MASTER_3'\n      WHEN (SELECT total_certifications FROM certifications_completed) >= 1 THEN 'CERTIFICATION_EARNED'\n      ELSE NULL\n    END as certification_badge,\n    \n    -- Perfect score badge\n    CASE \n      WHEN EXISTS (\n        SELECT 1 \n        FROM student_bucket_assignments sba\n        INNER JOIN sprinters s ON sba.student_id = s.id\n        INNER JOIN student_info si ON s.user_id = si.user_id\n        WHERE sba.score = 100 AND sba.status = 'completed'\n      ) THEN 'PERFECT_SCORE'\n      ELSE NULL\n    END as perfect_score_badge,\n    \n    -- Early completion badge\n    CASE \n      WHEN EXISTS (\n        SELECT 1 \n        FROM student_bucket_assignments sba\n        INNER JOIN sprinters s ON sba.student_id = s.id\n        INNER JOIN student_info si ON s.user_id = si.user_id\n        WHERE sba.completed_at < sba.due_date \n          AND sba.status = 'completed'\n          AND sba.due_date IS NOT NULL\n      ) THEN 'EARLY_BIRD'\n      ELSE NULL\n    END as early_bird_badge\n),\n\n-- Extract all skills from completed tasks\n-- Skills come from bucket_tasks.tags (JSON) and task_buckets.category\ncompleted_task_skills AS (\n  -- Extract skills from bucket_tasks.tags\n  SELECT DISTINCT\n    skill_tag as skill_name,\n    tb.category as task_category,\n    CASE \n      WHEN tb.category ILIKE '%frontend%' OR tb.category ILIKE '%front-end%' THEN 'Frontend'\n      WHEN tb.category ILIKE '%backend%' OR tb.category ILIKE '%back-end%' THEN 'Backend'\n      WHEN tb.category ILIKE '%database%' OR tb.category ILIKE '%db%' THEN 'Database'\n      WHEN tb.category ILIKE '%devops%' OR tb.category ILIKE '%dev-ops%' THEN 'DevOps'\n      WHEN tb.category ILIKE '%ai%' OR tb.category ILIKE '%ml%' OR tb.category ILIKE '%machine%' THEN 'AI/ML'\n      WHEN tb.category ILIKE '%security%' OR tb.category ILIKE '%cyber%' THEN 'Security'\n      WHEN tb.category ILIKE '%blockchain%' OR tb.category ILIKE '%web3%' THEN 'Blockchain'\n      WHEN tb.category ILIKE '%system%' OR tb.category ILIKE '%sys%' THEN 'System'\n      ELSE 'Other'\n    END as skill_category\n  FROM student_bucket_assignments sba\n  INNER JOIN sprinters s ON sba.student_id = s.id\n  INNER JOIN student_info si ON s.user_id = si.user_id\n  INNER JOIN bucket_tasks bt ON bt.id = sba.bucket_task_id\n  INNER JOIN task_buckets tb ON tb.id = bt.bucket_id\n  CROSS JOIN LATERAL (\n    SELECT jsonb_array_elements_text(\n      CASE \n        WHEN bt.tags IS NOT NULL AND bt.tags != '' THEN bt.tags::jsonb\n        ELSE '[]'::jsonb\n      END\n    ) as skill_tag\n  ) tags_expanded\n  WHERE sba.status = 'completed'\n    AND bt.tags IS NOT NULL \n    AND bt.tags != ''\n    AND bt.tags != '[]'\n  \n  UNION\n  \n  -- Also extract skills from tasks table if linked (for learning path tasks)\n  SELECT DISTINCT\n    skill_element as skill_name,\n    t.category as task_category,\n    CASE \n      WHEN t.category ILIKE '%frontend%' OR t.category ILIKE '%front-end%' THEN 'Frontend'\n      WHEN t.category ILIKE '%backend%' OR t.category ILIKE '%back-end%' THEN 'Backend'\n      WHEN t.category ILIKE '%database%' OR t.category ILIKE '%db%' THEN 'Database'\n      WHEN t.category ILIKE '%devops%' OR t.category ILIKE '%dev-ops%' THEN 'DevOps'\n      WHEN t.category ILIKE '%ai%' OR t.category ILIKE '%ml%' OR t.category ILIKE '%machine%' THEN 'AI/ML'\n      WHEN t.category ILIKE '%security%' OR t.category ILIKE '%cyber%' THEN 'Security'\n      WHEN t.category ILIKE '%blockchain%' OR t.category ILIKE '%web3%' THEN 'Blockchain'\n      WHEN t.category ILIKE '%system%' OR t.category ILIKE '%sys%' THEN 'System'\n      ELSE 'Other'\n    END as skill_category\n  FROM student_history sh\n  INNER JOIN student_info si ON sh.student_id = si.user_id\n  INNER JOIN tasks t ON (\n    (t.learning_path_template_id::text = sh.activity_id AND sh.activity_type = 'learning_path')\n    OR (t.job_role_id::text = sh.activity_id AND sh.activity_type = 'job_assessment')\n  )\n  CROSS JOIN LATERAL (\n    SELECT jsonb_array_elements_text(\n      CASE \n        WHEN t.skills IS NOT NULL AND t.skills != '' THEN t.skills::jsonb\n        ELSE '[]'::jsonb\n      END\n    ) as skill_element\n  ) skills_expanded\n  WHERE sh.status = 'completed'\n    AND t.skills IS NOT NULL \n    AND t.skills != ''\n    AND t.skills != '[]'\n),\n\n-- Map skills to programming language categories\nskill_category_mapping AS (\n  SELECT \n    skill_name,\n    skill_category,\n    CASE \n      -- Frontend skills\n      WHEN LOWER(skill_name) IN ('javascript', 'typescript', 'react', 'vue', 'angular', 'next.js', 'html', 'css', 'sass', 'scss', 'tailwind', 'bootstrap') THEN 'Frontend'\n      \n      -- Backend skills\n      WHEN LOWER(skill_name) IN ('node.js', 'nodejs', 'python', 'java', 'c#', 'go', 'rust', 'php', 'ruby', 'django', 'flask', 'express', 'nestjs', 'spring', 'laravel') THEN 'Backend'\n      \n      -- Database skills\n      WHEN LOWER(skill_name) IN ('sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'cassandra', 'oracle', 'sqlite', 'dynamodb') THEN 'Database'\n      \n      -- DevOps skills\n      WHEN LOWER(skill_name) IN ('docker', 'kubernetes', 'ci/cd', 'jenkins', 'git', 'github', 'gitlab', 'terraform', 'ansible', 'chef', 'puppet') THEN 'DevOps'\n      \n      -- AI/ML skills\n      WHEN LOWER(skill_name) IN ('machine learning', 'deep learning', 'tensorflow', 'pytorch', 'scikit-learn', 'pandas', 'numpy', 'ai', 'ml', 'neural networks', 'nlp', 'computer vision') THEN 'AI/ML'\n      \n      -- Security skills\n      WHEN LOWER(skill_name) IN ('cybersecurity', 'security', 'penetration testing', 'ethical hacking', 'owasp', 'ssl', 'tls', 'encryption', 'authentication', 'authorization') THEN 'Security'\n      \n      -- Blockchain skills\n      WHEN LOWER(skill_name) IN ('blockchain', 'web3', 'solidity', 'ethereum', 'smart contracts', 'cryptocurrency', 'defi', 'nft') THEN 'Blockchain'\n      \n      -- System skills\n      WHEN LOWER(skill_name) IN ('linux', 'unix', 'system administration', 'networking', 'operating systems', 'shell scripting', 'bash', 'powershell') THEN 'System'\n      \n      -- Use task category if skill doesn't match\n      ELSE COALESCE(skill_category, 'Other')\n    END as programming_category\n  FROM completed_task_skills\n),\n\n-- Calculate skill percentages by category\nskill_percentages_by_category AS (\n  SELECT \n    programming_category,\n    COUNT(DISTINCT skill_name) as skills_count,\n    ROUND(\n      (COUNT(DISTINCT skill_name)::numeric / \n       NULLIF(\n         (SELECT COUNT(DISTINCT skill_name) FROM skill_category_mapping), \n         0\n       )) * 100, \n      2\n    ) as category_percentage\n  FROM skill_category_mapping\n  WHERE programming_category IN ('Frontend', 'Backend', 'Database', 'DevOps', 'AI/ML', 'Security', 'Blockchain', 'System')\n  GROUP BY programming_category\n),\n\n-- Individual skill percentages\nskill_percentages AS (\n  SELECT \n    skill_name,\n    programming_category,\n    COUNT(*) as task_count,\n    ROUND(\n      (COUNT(*)::numeric / \n       NULLIF(\n         (SELECT COUNT(*) FROM skill_category_mapping WHERE skill_name = scm.skill_name),\n         0\n       )) * 100,\n      2\n    ) as skill_percentage\n  FROM skill_category_mapping scm\n  GROUP BY skill_name, programming_category\n),\n\n-- Main result set\nmain_stats AS (\n  SELECT \n    si.user_id,\n    si.name,\n    si.email,\n    COALESCE(cs.week_streak, 0) as week_streak,\n    COALESCE(ttc.tasks_completed, 0) as tasks_completed,\n    COALESCE(cc.job_assessment_certs, 0) as job_assessment_certifications,\n    COALESCE(cc.learning_path_certs, 0) as learning_path_certifications,\n    COALESCE(cc.total_certifications, 0) as total_certifications,\n    -- Badges as JSON array (only non-null badges)\n    COALESCE(\n      jsonb_agg(\n        jsonb_build_object('type', badge_type, 'name', badge_name)\n      ) FILTER (WHERE badge_name IS NOT NULL),\n      '[]'::jsonb\n    ) as badges_earned\n  FROM student_info si\n  CROSS JOIN current_streak cs\n  CROSS JOIN total_tasks_completed ttc\n  CROSS JOIN certifications_completed cc\n  CROSS JOIN badge_earned be\n  CROSS JOIN LATERAL (\n    VALUES\n      ('task', be.task_badge),\n      ('streak', be.streak_badge),\n      ('certification', be.certification_badge),\n      ('achievement', be.perfect_score_badge),\n      ('achievement', be.early_bird_badge)\n  ) AS badges(badge_type, badge_name)\n  GROUP BY si.user_id, si.name, si.email, cs.week_streak, ttc.tasks_completed, \n           cc.job_assessment_certs, cc.learning_path_certs, cc.total_certifications\n)\n\n-- Final output with all statistics\nSELECT \n  ms.*,\n  -- Skills by category as JSON\n  (\n    SELECT jsonb_object_agg(programming_category, category_percentage)\n    FROM skill_percentages_by_category\n  ) as skills_by_category,\n  -- Individual skills as JSON array\n  (\n    SELECT jsonb_agg(\n      jsonb_build_object(\n        'skill', skill_name,\n        'category', programming_category,\n        'percentage', skill_percentage,\n        'task_count', task_count\n      )\n      ORDER BY skill_percentage DESC\n    )\n    FROM skill_percentages\n    LIMIT 20  -- Top 20 skills\n  ) as top_skills\n  FROM main_stats ms;\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        416
+      ],
+      "id": "9218b3d1-8dfc-4469-a495-95dbd12d958c",
+      "name": "stats",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  id,\n  name,\n  description,\n  short_description,\n  prize,\n  prize_details,\n  github_repo,\n  tags,\n  category,\n  TO_CHAR(start_date, 'Dy Mon DD HH12:MI AM') as start_date_formatted,\n  TO_CHAR(end_date, 'Dy Mon DD HH12:MI AM') as end_date_formatted,\n  start_date,\n  end_date,\n  status,\n  is_public,\n  is_active,\n  location,\n  max_participants,\n  current_participants,\n  created_by,\n  organizer_name,\n  organizer_email,\n  banner_url,\n  website_url,\n  created_at,\n  updated_at,\n  CASE \n    WHEN status = 'upcoming' AND start_date > NOW() THEN 'Upcoming'\n    WHEN status = 'active' AND NOW() BETWEEN start_date AND end_date THEN 'Active'\n    WHEN status = 'completed' OR (end_date < NOW() AND status != 'cancelled') THEN 'Completed'\n    WHEN status = 'cancelled' THEN 'Cancelled'\n    ELSE 'Unknown'\n  END as current_status\nFROM hackathons\nWHERE is_active = true\nORDER BY start_date DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        592
+      ],
+      "id": "31c5f531-518d-40e3-bc09-69eb3fe45d7e",
+      "name": "hackathons",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Find user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "tasks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "company certifications",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "skill certification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "hackathons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find user": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tasks": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "automation.srv840082.hstgr.cloud",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.105.1 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36",
+          "content-length": "177",
+          "accept": "*/*",
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US",
+          "content-type": "application/json",
+          "origin": "vscode-webview://1m3ubgej0dsvfb6li2oh5rcl54o4jh0mgeemerdr9hhepqtajknf",
+          "priority": "u=1, i",
+          "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "cross-site",
+          "x-forwarded-for": "196.189.145.184",
+          "x-forwarded-host": "automation.srv840082.hstgr.cloud",
+          "x-forwarded-port": "443",
+          "x-forwarded-proto": "https",
+          "x-forwarded-server": "70e7ebb9947c",
+          "x-real-ip": "196.189.145.184"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "token": "5fd8ae1a65f556049ebe0b1d82527a97cb4744391ac4bfe57e6318057296d2e9",
+          "action": "fetchCompanyCertifications",
+          "resource": "companyCertifications",
+          "source": "vscode-extension"
+        },
+        "webhookUrl": "https://automation.srv840082.hstgr.cloud/webhook/17ebf299-f208-4162-99e7-5944117b9bcf",
+        "executionMode": "production"
+      }
+    ],
+    "Find user": [
+      {
+        "id": "HIMBlFv0sxKehd2mb9bpltRD8Js7jP83",
+        "name": "Haymanot Abera Seyoum",
+        "email": "haymanotseyoum3@gmail.com",
+        "github_username": "Haymisey"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

@@ -1,0 +1,1363 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Get the raw text output from the AI agent.\nconst aiResponseText = $input.first().json.output;\n\n// --- Step 1: Clean and Extract the JSON String ---\n// AI models sometimes wrap their JSON in ```json ... ```. This line removes it.\nconst cleanedJsonString = aiResponseText.replace(/^```json\\n/, '').replace(/\\n```$/, '');\n\ntry {\n  // --- Step 2: Parse the String into a JavaScript Object ---\n  const assessmentData = JSON.parse(cleanedJsonString);\n  \n  // --- Step 3: Validate that Essential Top-Level Keys Exist ---\n  const requiredFields = [\n    'overall_assessment', \n    'detailed_scores', \n    'skill_gaps', \n    'strengths', \n    'recommendations', \n    'inline_feedback',\n    'review_summary',\n    'next_steps'\n  ];\n  \n  // Find any fields from our required list that are missing in the AI's response.\n  const missingFields = requiredFields.filter(field => !(field in assessmentData));\n  \n  if (missingFields.length > 0) {\n    // If fields are missing, it's an invalid response.\n    throw new Error(`AI response is missing required top-level keys: ${missingFields.join(', ')}`);\n  }\n  \n  // --- Step 4: If everything is successful, output the validated data ---\n  return [{\n    json: {\n      assessmentData: assessmentData, // The full, validated JSON object\n      isValid: true,\n      error: null\n    }\n  }];\n  \n} catch (error) {\n  // --- Step 5: If JSON.parse fails or validation fails, output an error object ---\n  return [{\n    json: {\n      assessmentData: null,\n      isValid: false,\n      error: error.message,\n      rawResponse: aiResponseText // Include the original text for debugging\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        256
+      ],
+      "id": "3a66fb78-48ae-4115-9672-2a44c30a7b82",
+      "name": "Parse & Validate JSON"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE assessment_submissions\nSET status = 'approved', reviewed_at = NOW(), reviewed_by = 'n8n_workflow'\nWHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Insert Submission1').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1680,
+        128
+      ],
+      "id": "a5390348-3d19-4c09-82d5-b780562309ba",
+      "name": "Update Submission Status1",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO skill_gap_analyses (\n  id, submission_id, overall_score, technical_score, code_quality_score,\n  problem_solving_score, skill_gaps, strengths, recommendations, analysis_data\n) VALUES (\n  gen_random_uuid(), $1, $2, $3, $4,\n  $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb\n)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ $('Insert Submission1').item.json.id }}, {{ $('Parse & Validate JSON').item.json.assessmentData.overall_assessment.score }}, {{ $('Parse & Validate JSON').item.json.assessmentData.detailed_scores.technical_score }}, {{ $('Parse & Validate JSON').item.json.assessmentData.detailed_scores.code_quality_score }}, {{ $('Parse & Validate JSON').item.json.assessmentData.detailed_scores.problem_solving_score }}, {{ JSON.stringify($('Parse & Validate JSON').item.json.assessmentData.skill_gaps) }},{{ JSON.stringify($('Parse & Validate JSON').item.json.assessmentData.strengths) }},{{ JSON.stringify($('Parse & Validate JSON').item.json.assessmentData.recommendations) }},{{ JSON.stringify($('Parse & Validate JSON').item.json.assessmentData) }}  "
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1504,
+        128
+      ],
+      "id": "188db638-b8b1-4612-a24e-355c8e9b1bfe",
+      "name": "Insert Skill Gap Analysis1",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO assessment_submissions (\n  id, job_role_repo_id, student_id, github_pr_url, github_pr_number,\n  github_pr_title, github_pr_body, status, submitted_at\n) VALUES (\n  gen_random_uuid(), $1, $2, $3, $4,\n  $5, $6, 'pending', $7\n)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ $('Lookup Repo ID').item.json.id }}, {{ $('When Executed by Another Workflow').first().json.body.user.login }}, {{ $('When Executed by Another Workflow').first().json.body.head.repo.html_url }}, {{ $('When Executed by Another Workflow').first().json.body.number }}, {{ $('When Executed by Another Workflow').first().json.body.title }}, {{ $('When Executed by Another Workflow').first().json.body}}, {{ $('When Executed by Another Workflow').first().json.body.created_at }} "
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1312,
+        128
+      ],
+      "id": "8cfb40e0-246b-4021-937f-7980e28c0462",
+      "name": "Insert Submission1",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, job_role_id\nFROM job_applications\nWHERE assessment_repo_url = $1\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $('When Executed by Another Workflow').all()[0].json.body.base.repo.html_url }}\n"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        272
+      ],
+      "id": "06b4082c-1fc1-460b-a60e-9aebdca5903d",
+      "name": "Lookup Repo ID1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "643c7654-ff07-4998-97f8-0de7b9eb123d",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        368
+      ],
+      "id": "84542fb9-9fbd-44e3-8ca9-21cd541f1a0f",
+      "name": "If7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/app/installations/86555484/access_tokens",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Authorization\": \"Bearer {{ $json.jwt }} \",\n  \"Accept\": \"application/vnd.github+json\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        96
+      ],
+      "id": "8c1020d0-a28d-449f-99e0-449d9c8252f7",
+      "name": "HTTP Request15",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst {Buffer} = require('buffer')\n\nconst appId = '1865673';\nconst privateKey = `-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAubvN1GdSuCa2e/+aOTabb6jy9f4f2ytycvnCehhzEzoOLUXw\nk6RxisehHe+rspUSrtAOF+2pLuE4e+3zZosnOxfqXF8kOUAX3jBV1xyyO4nGyqii\nDu9zvp80m7YEAfE8eeboaUsB6Lb532PzVS67Y3oRledWLRnXKXYyEw3xn5Oho8ge\n5Ao7PNI39U1PLe7F8dsmpW7yxk2RekgVbBcaawWD9XQEQnQx1yox38FSrqzOHEcT\n4dxLY62Tr6TdJwPuWFeLItT9rmVKm5OX9FW+Fdg9Nd6if4quS33BADvtNKFBEO3p\nHEmmtYsConp9OmLENfIjzuP/njZnoa6LDhSC6QIDAQABAoIBAEAt6yP4SBcmGWyj\nmDEo83EUGlBybaOYUcX1FASIqkr8hqWSQ11hN3LTJJNpnBTrejc54YTXNNzkKlZ4\nlODcOMQssWkV3ziBMz4tyZu5aMU2CKFCwC0VBRPbg5xCuwPIzjL5XVn090Xo5FMT\nAKRwr4PiTG1WMOsIwNas5wS6jsGq9RL4jAv20Znkg2OchY81ShaK825z1yJg5xzy\nXTZdQq8egjA9Q3t56IkUhL0lLfiIk+oFPd4pguUvX+CFelyeOStTMnsRzaWnGz6a\nRucxU8nixjbCxIET0uO0OdoiUFky5SWXWJbYCvl1Zu+fNkCKOlWyM2qJFpv1TxsJ\n283AvQECgYEA5MBv2jzpu9QtEBjQhx+MtzaQk4agVFMCYreAdNxPmPiHh/MzG/Q/\nF0naZV+030YeCAZnR11qwhNUO6NQUGpB0/GSOsJ+XLf+uoiU1sksbIBBMFJCHDgQ\n/7ajmBg7BJh/RDl7MskH5MBv/wI5jrSvdc3r6pqb4QUtnFO3NTI/I9ECgYEAz9uS\nVrvwnffHzPMesVwl267G4OEAs8SeBviSeNRkTww9zkM80YHl7WnfKeDn5vz0vBAe\nVhOKu7lGC+zjftq7HpELj9YazDJfltCe92nJCgN8PDEr2a9b+WwNn19gW5TWsj/f\nb6XXAC7A+zQ0S3hVSe4/OvtkY+eZ3PVIiW8UK5kCgYEAvRjXXfE8xqh/F+9rckgC\navIQUePYZdy4/CH1bqUwp6PLZfcFKPafsQC8KVEUk/3ClZ+1gKkYt5aC60n1+oPc\nJvhriWd+TedMC6ccYvGqZ4ceXHOjcvBmHP09/10IbKQjkKJz1WeZvt/VtViBfBah\ndSDlBOsKMNm2+qO5r5/50gECgYAnndbvdxSuVwqa0n+4GDMTAuXe+KOUn9XqyDfK\nldikhFXHWWNfHx3+uR4Ssk4g5XeT3JKbn0/i5bYnEbhudiwR8F0+xfUHlFZJvWt/\nBoeNxApKwqhz7gtep6yVAq2v5tdg0/G3KummnEKl3lZVSBMhaypcCIwiyoK17X4s\ny6IRiQKBgQCY4yEs6Cg8MxsnCg92LQujgUoCKz9ZJnRK77PQerCrk6lfmFXsd8xY\nRbwWFMrxOrQFZOjwoVbs37olkvAKEcSFNr3QQsKviD4/MS49MWQNQytWDAT8d05Y\nNxx8HIsQL8SDMUzOT3cUjMaexX1atTMzKzf7Er7eobENkTuRedZXaQ==\n-----END RSA PRIVATE KEY-----`;\n\nfunction base64url(input) {\n  return Buffer.from(JSON.stringify(input))\n    .toString('base64')\n    .replace(/=/g, '')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_');\n}\n\nconst now = Math.floor(Date.now() / 1000);\n\nconst header = { alg: 'RS256', typ: 'JWT' };\nconst payload = {\n  iat: now,\n  exp: now + (10 * 60), // 10 minutes\n  iss: appId,\n};\n\nconst headerBase64 = base64url(header);\nconst payloadBase64 = base64url(payload);\nconst data = `${headerBase64}.${payloadBase64}`;\n\nconst signature = crypto\n  .createSign('RSA-SHA256')\n  .update(data)\n  .sign(privateKey, 'base64')\n  .replace(/=/g, '')\n  .replace(/\\+/g, '-')\n  .replace(/\\//g, '_');\n\nconst token = `${data}.${signature}`;\n\nreturn [{ json: { jwt: token } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        96
+      ],
+      "id": "df625914-ac7f-46d0-b242-4576cb70adbf",
+      "name": "JWT7"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{$('When Executed by Another Workflow').first().json.body.head.user.login}}/{{ $('When Executed by Another Workflow').first().json.body.head.repo.name }}/pulls/{{ $('When Executed by Another Workflow').first().json.body.number}}/merge",
+        "sendHeaders": true,
+        "specifyHeaders": "=json",
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonHeaders": "={\n  \"Authorization\": \"Bearer {{ $('HTTP Request15').first().json.token }}\",\n  \"Accept\": \"application/vnd.github+json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        608,
+        96
+      ],
+      "id": "762a5ced-3a3c-4637-828e-cd9009a8a677",
+      "name": "HTTP Request14",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('When Executed by Another Workflow').first().json.body.head.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('When Executed by Another Workflow').first().json.body.head.repo.name }}",
+          "mode": "name"
+        },
+        "pullRequestNumber": "={{ $('When Executed by Another Workflow').first().json.body.number }}",
+        "event": "comment",
+        "body": "={{ $json.assessmentData.next_steps[0] }}",
+        "additionalFields": {}
+      },
+      "id": "130ba917-854a-4b13-9395-7c1abb5d86f5",
+      "name": "GitHub Robot Review1",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        -160,
+        96
+      ],
+      "webhookId": "39c2fe8b-f686-4699-8450-2a5b4c263d93",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { Buffer } = require('buffer');\nconst originalFile = $input.first();\n \ntry {\n  const decodedContent = Buffer.from(originalFile.json.content, 'base64').toString('utf8');\n  \n  // Detect if it's JSON or code/text\n  let analysisData;\n  let fileType = 'unknown';\n  \n  try {\n    // Try to parse as JSON first\n    analysisData = JSON.parse(decodedContent);\n    fileType = 'json';\n  } catch (jsonError) {\n    // If not JSON, treat as text/code\n    analysisData = {\n      content: decodedContent,\n      filename: originalFile.json.name,\n      isCode: true\n    };\n    fileType = 'text';\n  }\n  \n  return [\n    {\n      json: {\n        analysis: analysisData,\n        originalFile: originalFile.json,\n        fileType: fileType,\n        success: true\n      }\n    }\n  ];\n  \n} catch (error) {\n  return [\n    {\n      json: {\n        error: Error,\n        success: false\n      }\n    }\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1504,
+        384
+      ],
+      "id": "4b8819cc-ac3b-4c8a-a9fa-aa36d6c061b5",
+      "name": "Decode File2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1152,
+        544
+      ],
+      "id": "3d50958c-a46d-4f5b-99bd-63fe109aa1a7",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $json.body.head.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $json.body.head.repo.name }}",
+          "mode": "name"
+        },
+        "filePath": "={{ $json.task.instructionFilePath }}",
+        "asBinaryProperty": "",
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        -1696,
+        384
+      ],
+      "id": "2456f3fd-b6f0-4f84-92da-adcfdb2c7c84",
+      "name": "Get a file2",
+      "webhookId": "d3d1b992-875f-4982-bef2-ae7f4ff135fd",
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        400
+      ],
+      "id": "c23b3200-fba8-4859-89ec-041a5ee14366",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {}
+      },
+      "id": "384d8e1a-6a0d-49e3-87af-3a14d8d48cb4",
+      "name": "Code Review Agent2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -736,
+        256
+      ],
+      "typeVersion": 1.9,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('When Executed by Another Workflow').first().json.body.head.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('When Executed by Another Workflow').first().json.body.head.repo.name }}",
+          "mode": "name"
+        },
+        "issueNumber": "={{ $('When Executed by Another Workflow').first().json.body.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "ReviewedByTesfaAI"
+            }
+          ]
+        }
+      },
+      "id": "6c0e0a37-7f73-4f21-ae0b-3c27672c987d",
+      "name": "Add Label to PR2",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        416,
+        96
+      ],
+      "webhookId": "c98f39f1-603b-4013-9149-53b4cc31b611",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get both inputs from the Merge node\nconst analysisInput = $input.all().find(item => item.json.analysis);\nconst prFiles = $input.all().filter(item => !item.json.analysis).map(item => item.json);\n\nconst analysisData = analysisInput ? analysisInput.json.analysis : null;\nconst fileType = analysisInput ? analysisInput.json.fileType : 'json';\n\n// --- 1. BUILD THE REVIEW CONTEXT (Same as before) ---\nlet reviewContext = '';\nif (fileType === 'json' && analysisData) {\n  reviewContext += `**ORIGINAL ANALYSIS FOR: ${analysisData.filename}**\\n- Score: ${analysisData.score}/100\\n- Metrics: ${JSON.stringify(analysisData.metrics, null, 2)}\\n- Summary: ${analysisData.summary}\\n\\n`;\n} else if (analysisData) {\n  reviewContext += `**REFERENCE INSTRUCTIONS FILE: ${analysisData.filename}**\\n\\`\\`\\`\\n${analysisData.content}\\n\\`\\`\\`\\n\\n`;\n}\n\nreviewContext += `**PULL REQUEST SUBMISSION TO REVIEW:**\\n`;\n\nif (prFiles.length === 0) {\n  reviewContext += \"No files were changed in this pull request.\";\n} else {\n  for (const file of prFiles) {\n    let fileBlock = `### File: ${file.filename} [${file.status.toUpperCase()}]\\n`;\n    if (file.status === 'added' && file.content) {\n      const safeContent = file.content.replace(/```/g, \"''\");\n      const fileExtension = file.filename.split('.').pop() || 'text';\n      fileBlock += \"**Full content for new file:**\\n\";\n      fileBlock += \"```\" + fileExtension + \"\\n\" + safeContent + \"\\n```\\n\";\n    } else if (file.patch) {\n      const safePatch = file.patch.replace(/```/g, \"''\");\n      fileBlock += \"**Changes for modified file:**\\n\";\n      fileBlock += \"```diff\\n\" + safePatch + \"\\n```\\n\";\n    } else {\n      fileBlock += \"_No reviewable content available._\\n\";\n    }\n    reviewContext += fileBlock + \"\\n---\\n\";\n  }\n}\n\n// --- 2. BUILD THE FINAL STRUCTURED PROMPT FOR THE AI ---\nconst structuredPrompt = `You are an automated assessment agent for the NERD LMS system. Your task is to review the student's pull request submission based on the provided instructions and code. You MUST provide a comprehensive assessment in a specific JSON format.\n\n**REVIEW CONTEXT:**\n${reviewContext}\n\n**YOUR MISSION:**\nAnalyze the student's submission and generate a detailed assessment that matches the NERD LMS database schema.\n\n**REQUIRED OUTPUT FORMAT:**\nYou MUST respond with ONLY a valid JSON object in this exact structure. Do not include any text or markdown before or after the JSON block.\n\n{\n  \"overall_assessment\": {\n    \"score\": 0,\n    \"grade\": \"F\",\n    \"summary\": \"A brief, one-sentence summary of the student's performance.\"\n  },\n  \"detailed_scores\": {\n    \"technical_score\": 0,\n    \"code_quality_score\": 0,\n    \"problem_solving_score\": 0,\n    \"documentation_score\": 0,\n    \"testing_score\": 0,\n    \"best_practices_score\": 0\n  },\n  \"skill_gaps\": [\n    {\n      \"skill\": \"Identified Skill Gap (e.g., Error Handling)\",\n      \"gap_level\": \"moderate\",\n      \"description\": \"A detailed description of why this is a skill gap.\",\n      \"recommendation\": \"An actionable recommendation for the student.\"\n    }\n  ],\n  \"strengths\": [\n    {\n      \"skill\": \"Identified Strength (e.g., Code Structure)\",\n      \"description\": \"A detailed description of what the student did well.\",\n      \"evidence\": \"A reference to the specific part of the code that demonstrates this strength.\"\n    }\n  ],\n  \"recommendations\": [\n    {\n      \"type\": \"skill_gap\",\n      \"priority\": \"medium\",\n      \"title\": \"A short title for the recommendation (e.g., Improve Documentation)\",\n      \"description\": \"A more detailed description of the recommended action.\",\n      \"estimated_hours\": 0,\n      \"resources\": [\"A list of generic resource topics, e.g., 'Code documentation best practices'\"]\n    }\n  ],\n  \"inline_feedback\": [\n    {\n      \"file\": \"path/to/file.py\",\n      \"line\": 0,\n      \"comment\": \"A specific, line-level comment.\",\n      \"type\": \"suggestion\"\n    }\n  ],\n  \"review_summary\": \"A detailed, overall summary of the review, written in a constructive and encouraging tone for the student.\",\n  \"next_steps\": [\n    \"A list of clear, actionable next steps for the student.\"\n  ]\n}\n\n**ASSESSMENT CRITERIA (Score 0-100 for each):**\n- **Technical Score:** Correctness of logic, algorithm efficiency, use of frameworks.\n- **Code Quality Score:** Readability, maintainability, adherence to style guides (PEP 8 for Python, etc.).\n- **Problem Solving Score:** How effectively the submission meets the requirements from the INSTRUCTIONS.md file.\n- **Documentation Score:** Quality of comments, README, and any other supporting documentation.\n- **Testing Score:** (If applicable) Test coverage, quality, and effectiveness.\n- **Best Practices Score:** Use of version control, security considerations, modern coding practices.\n\n**GRADING SCALE:**\n- A (90-100): Excellent\n- B (80-89): Good\n- C (70-79): Acceptable\n- D (60-69): Needs Improvement\n- F (0-59): Poor\n\n**IMPORTANT:**\n1. Provide realistic scores for ALL categories (0-100).\n2. The entire output must be a single, valid JSON object.\n3. Base your assessment on the student's submission compared against the reference instructions.\n\nNow, review the PR and provide your assessment in the exact JSON format.`;\n\n\nreturn [{\n  json: {\n    user_message: structuredPrompt\n  }\n}];"
+      },
+      "id": "f4e5ee4b-e6eb-43bc-bcdf-3b45c15d5097",
+      "name": "Create target Prompt from PR Diffs2",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -944,
+        272
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{$json.body.head.user.login}}/{{$json.body.head.repo.name}}/pulls/{{$json.body.number}}/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "9df7ace7-75c5-42d7-9ce6-ee8593d172ca",
+      "name": "Get file's Diffs from PR2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -1712,
+        576
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "algaWuRY0Vctu2Wc",
+          "name": "Bearer Auth account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2016,
+        496
+      ],
+      "id": "40ad89ce-c760-4226-bb76-6fbf27417347",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "        SELECT id\n        FROM \"user\"\n        WHERE github_username = $1\n        LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $('When Executed by Another Workflow').first().json.body.user.login }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1280,
+        512
+      ],
+      "id": "8882e897-f31b-4583-85cd-12af34c00a61",
+      "name": "Lookup User ID",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "    INSERT INTO enhanced_assessment_results (\n        id, user_id, job_role_id, visibility_stage, last_visibility_update,\n        score, completed_at, technical_score, soft_skills_score,\n        company_notes, company_rating, is_shortlisted, assessment_phase\n    ) VALUES (\n        gen_random_uuid(), $1, $2, $3, NOW(),\n        $4, $5, $6, $7,\n        NULL, NULL, FALSE, 'completed'\n    )\n    ON CONFLICT (user_id, job_role_id) DO UPDATE SET\n        visibility_stage = EXCLUDED.visibility_stage,\n        last_visibility_update = NOW(),\n        score = EXCLUDED.score,\n        completed_at = EXCLUDED.completed_at,\n        technical_score = EXCLUDED.technical_score,\n        soft_skills_score = EXCLUDED.soft_skills_score,\n        updated_at = NOW(),\n        assessment_phase = EXCLUDED.assessment_phase;",
+        "options": {
+          "queryReplacement": "={{ $('Lookup User ID').item.json.id }}, {{ $('Lookup Repo ID1').item.json.job_role_id }}, {{ $json.item.json.visibility_stage }}, {{ $('Parse & Validate JSON').item.json.assessmentData.overall_assessment.score }},{{ $('When Executed by Another Workflow').first().json.body.created_at }},{{ $('Parse & Validate JSON').item.json.assessmentData.detailed_scores.technical_score }},{{ $('Parse & Validate JSON').item.json.assessmentData.detailed_scores.code_quality_score }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2160,
+        496
+      ],
+      "id": "ebb9c820-25cc-4a1c-83aa-21d47dc2f7e1",
+      "name": "Upsert Enhanced Assessment Results",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ef0f36b7-7473-45fb-85ed-cbe787f6386b",
+              "leftValue": "={{ $('Parse & Validate JSON').item.json.assessmentData.overall_assessment.score }}",
+              "rightValue": "={{$('Lookup Company Settings').item.json.min_score_threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        512
+      ],
+      "id": "ce1e0e7c-4295-4825-ac43-ee50b0e9fd49",
+      "name": "Determine Visibility Stage"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"item.json.visibility_stage\": \"qualified\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1904,
+        448
+      ],
+      "id": "2327d3a3-85a9-4baf-b9d8-69d2a9525c6d",
+      "name": "Qualified"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"item.json.visibility_stage\": \"completed\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1904,
+        624
+      ],
+      "id": "cf551cd1-fed4-4636-88ff-42a9e94c3ec4",
+      "name": "Completed"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "        SELECT min_score_threshold\n        FROM companies\n        WHERE id = $1\n        LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $('Lookup Repo ID').item.json.company_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1472,
+        512
+      ],
+      "id": "2fd7fb25-2b77-41ad-909e-a5ae9eb6299b",
+      "name": "Lookup Company Settings",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, company_id\nFROM job_role_repositories\nWHERE job_role_id = $1\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $('Lookup Repo ID1').item.json.job_role_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1072,
+        256
+      ],
+      "id": "418c34ef-09c1-40fb-8c0a-b418ace91951",
+      "name": "Lookup Repo ID",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO enhanced_task_assignments (\n  id, student_id, task_id, status, score, \n  technical_score, code_quality_score, problem_solving_score,\n  documentation_score, testing_score, best_practices_score,\n  github_pr_url, feedback, assessment_data, next_steps,\n  submitted_at, completed_at, created_at, updated_at\n) VALUES (\n  gen_random_uuid(),\n  $1,\n  $2,\n  'completed',\n  $3,\n  $4,\n  $5,\n  $6,\n  $7,\n  $8,\n  $9,\n  $10,\n  $11,\n  $12,\n  $13,\n  NOW(),\n  NOW(),\n  NOW(),\n  NOW()\n);",
+        "options": {
+          "queryReplacement": "={{$('When Executed by Another Workflow').first().json.task.userId}},\n  {{$('When Executed by Another Workflow').first().json.task.taskId}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.overall_assessment.score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.technical_score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.code_quality_score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.problem_solving_score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.documentation_score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.testing_score}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.detailed_scores.best_practices_score}},\n  {{$('When Executed by Another Workflow').first().json.body.url}},\n  {{$('Parse & Validate JSON').first().json.assessmentData.overall_assessment.summary}},\n  {{JSON.stringify($('Parse & Validate JSON').first().json.assessmentData)}},\n  {{JSON.stringify($('Parse & Validate JSON').first().json.assessmentData.next_steps)}}\n\n"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        256,
+        272
+      ],
+      "id": "736aa1f4-0ec0-4287-8c4c-b2ea74c2e49a",
+      "name": "Insert Task Result",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE student_history\nSET \n  total_tasks_submitted = total_tasks_submitted + 1,\n  updated_at = NOW()\nWHERE \n  student_id = $1\n  AND activity_type = 'job_assessment'\n  AND activity_id = $2\n  AND status = 'active'\nRETURNING total_tasks_assigned, total_tasks_submitted;",
+        "options": {
+          "queryReplacement": "={{ $('When Executed by Another Workflow').first().json.task.userId }},{{ $('Lookup Repo ID1').item.json.job_role_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        496,
+        288
+      ],
+      "id": "c3eaac5d-75c1-4171-8e05-d235ed9e4b8b",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "CNCEKYH21dl0qqeZ",
+          "name": "Postgres-Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db9aa431-074a-4f32-8657-d29f7be394c5",
+              "leftValue": "={{ $json.total_tasks_assigned }}",
+              "rightValue": "={{ $json.total_tasks_submitted }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        272
+      ],
+      "id": "dc6db297-a95a-4a68-8340-38f6e5d6a599",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "## Remove Later\n- We might need to remove this as it is not needed anywhere",
+        "height": 320,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1280,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "d8f390cc-0942-4794-92d5-c7d3d81f7f63",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Parse & Validate JSON": {
+      "main": [
+        [
+          {
+            "node": "If7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GitHub Robot Review1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Skill Gap Analysis1": {
+      "main": [
+        [
+          {
+            "node": "Update Submission Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Submission1": {
+      "main": [
+        [
+          {
+            "node": "Insert Skill Gap Analysis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Repo ID1": {
+      "main": [
+        [
+          {
+            "node": "Insert Task Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If7": {
+      "main": [
+        [
+          {
+            "node": "Lookup Repo ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request15": {
+      "main": [
+        [
+          {
+            "node": "Add Label to PR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT7": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request14": {
+      "main": [
+        []
+      ]
+    },
+    "GitHub Robot Review1": {
+      "main": [
+        [
+          {
+            "node": "JWT7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode File2": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Create target Prompt from PR Diffs2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file2": {
+      "main": [
+        [
+          {
+            "node": "Decode File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Code Review Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Review Agent2": {
+      "main": [
+        [
+          {
+            "node": "Parse & Validate JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Label to PR2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create target Prompt from PR Diffs2": {
+      "main": [
+        [
+          {
+            "node": "Code Review Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get file's Diffs from PR2": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get a file2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get file's Diffs from PR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup User ID": {
+      "main": [
+        [
+          {
+            "node": "Lookup Company Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Visibility Stage": {
+      "main": [
+        [
+          {
+            "node": "Qualified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified": {
+      "main": [
+        [
+          {
+            "node": "Upsert Enhanced Assessment Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed": {
+      "main": [
+        [
+          {
+            "node": "Upsert Enhanced Assessment Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Company Settings": {
+      "main": [
+        [
+          {
+            "node": "Determine Visibility Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Repo ID": {
+      "main": [
+        [
+          {
+            "node": "Lookup User ID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert Submission1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Task Result": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Lookup Repo ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "hasDesignFiles": false,
+        "shouldSkipReview": false,
+        "isTaskSubmission": true,
+        "task": {
+          "path": "submissions/week-1/task-2/",
+          "instructionFilePath": "submissions/week-1/task-2/Instruction.md",
+          "userId": "HIMBlFv0sxKehd2mb9bpltRD8Js7jP83",
+          "taskId": "64c32d95-fe31-46a1-8c9b-45720857755e"
+        },
+        "body": {
+          "url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2",
+          "id": 2952286311,
+          "node_id": "PR_kwDOQH98Cs6v-FBn",
+          "html_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pull/2",
+          "diff_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pull/2.diff",
+          "patch_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pull/2.patch",
+          "issue_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/2",
+          "number": 2,
+          "state": "open",
+          "locked": false,
+          "title": "Submission for Week 1, Task 2:  SQL Database Integration with  Testing",
+          "user": {
+            "login": "dagiteferi",
+            "id": 152607246,
+            "node_id": "U_kgDOCRiaDg",
+            "avatar_url": "https://avatars.githubusercontent.com/u/152607246?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/dagiteferi",
+            "html_url": "https://github.com/dagiteferi",
+            "followers_url": "https://api.github.com/users/dagiteferi/followers",
+            "following_url": "https://api.github.com/users/dagiteferi/following{/other_user}",
+            "gists_url": "https://api.github.com/users/dagiteferi/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/dagiteferi/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/dagiteferi/subscriptions",
+            "organizations_url": "https://api.github.com/users/dagiteferi/orgs",
+            "repos_url": "https://api.github.com/users/dagiteferi/repos",
+            "events_url": "https://api.github.com/users/dagiteferi/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/dagiteferi/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "body": "This PR implements a  SQL database solution for ChipChip's social commerce platform, demonstrating enterprise-grade database integraThis PR implements a production-ready SQL database solution for ChipChip's social commerce platform, demonstrating enterprise-grade database integration skills.tion skills.",
+          "created_at": "2025-10-27T19:11:18Z",
+          "updated_at": "2025-10-27T19:11:18Z",
+          "closed_at": null,
+          "merged_at": null,
+          "merge_commit_sha": "fa4ce7484b75203fc912ed1f280f869df48abf2c",
+          "assignee": null,
+          "assignees": [],
+          "requested_reviewers": [],
+          "requested_teams": [],
+          "labels": [],
+          "milestone": null,
+          "draft": false,
+          "commits_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2/commits",
+          "review_comments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2/comments",
+          "review_comment_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/comments{/number}",
+          "comments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/2/comments",
+          "statuses_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/statuses/79545e53b087d1de4ea50690842286411a2779fa",
+          "head": {
+            "label": "TesfaAI:feature/week-1/task-2-solution",
+            "ref": "feature/week-1/task-2-solution",
+            "sha": "79545e53b087d1de4ea50690842286411a2779fa",
+            "user": {
+              "login": "TesfaAI",
+              "id": 233163235,
+              "node_id": "O_kgDODeXJ4w",
+              "avatar_url": "https://avatars.githubusercontent.com/u/233163235?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/TesfaAI",
+              "html_url": "https://github.com/TesfaAI",
+              "followers_url": "https://api.github.com/users/TesfaAI/followers",
+              "following_url": "https://api.github.com/users/TesfaAI/following{/other_user}",
+              "gists_url": "https://api.github.com/users/TesfaAI/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/TesfaAI/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/TesfaAI/subscriptions",
+              "organizations_url": "https://api.github.com/users/TesfaAI/orgs",
+              "repos_url": "https://api.github.com/users/TesfaAI/repos",
+              "events_url": "https://api.github.com/users/TesfaAI/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/TesfaAI/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "repo": {
+              "id": 1082096650,
+              "node_id": "R_kgDOQH98Cg",
+              "name": "job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "full_name": "TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "private": true,
+              "owner": {
+                "login": "TesfaAI",
+                "id": 233163235,
+                "node_id": "O_kgDODeXJ4w",
+                "avatar_url": "https://avatars.githubusercontent.com/u/233163235?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/TesfaAI",
+                "html_url": "https://github.com/TesfaAI",
+                "followers_url": "https://api.github.com/users/TesfaAI/followers",
+                "following_url": "https://api.github.com/users/TesfaAI/following{/other_user}",
+                "gists_url": "https://api.github.com/users/TesfaAI/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/TesfaAI/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/TesfaAI/subscriptions",
+                "organizations_url": "https://api.github.com/users/TesfaAI/orgs",
+                "repos_url": "https://api.github.com/users/TesfaAI/repos",
+                "events_url": "https://api.github.com/users/TesfaAI/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/TesfaAI/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "html_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "description": "This repo is for your job role assessment",
+              "fork": false,
+              "url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "forks_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/forks",
+              "keys_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/keys{/key_id}",
+              "collaborators_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/collaborators{/collaborator}",
+              "teams_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/teams",
+              "hooks_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/hooks",
+              "issue_events_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/events{/number}",
+              "events_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/events",
+              "assignees_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/assignees{/user}",
+              "branches_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/branches{/branch}",
+              "tags_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/tags",
+              "blobs_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/blobs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/tags{/sha}",
+              "git_refs_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/refs{/sha}",
+              "trees_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/trees{/sha}",
+              "statuses_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/statuses/{sha}",
+              "languages_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/languages",
+              "stargazers_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/stargazers",
+              "contributors_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/contributors",
+              "subscribers_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/subscribers",
+              "subscription_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/subscription",
+              "commits_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/commits{/sha}",
+              "git_commits_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/commits{/sha}",
+              "comments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/comments{/number}",
+              "issue_comment_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/comments{/number}",
+              "contents_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/contents/{+path}",
+              "compare_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/compare/{base}...{head}",
+              "merges_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/merges",
+              "archive_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/{archive_format}{/ref}",
+              "downloads_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/downloads",
+              "issues_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues{/number}",
+              "pulls_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls{/number}",
+              "milestones_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/notifications{?since,all,participating}",
+              "labels_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/labels{/name}",
+              "releases_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/releases{/id}",
+              "deployments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/deployments",
+              "created_at": "2025-10-23T18:20:04Z",
+              "updated_at": "2025-10-23T18:20:10Z",
+              "pushed_at": "2025-10-27T18:38:11Z",
+              "git_url": "git://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "ssh_url": "git@github.com:TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "clone_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "svn_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "homepage": null,
+              "size": 49,
+              "stargazers_count": 0,
+              "watchers_count": 0,
+              "language": null,
+              "has_issues": true,
+              "has_projects": true,
+              "has_downloads": true,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_discussions": false,
+              "forks_count": 0,
+              "mirror_url": null,
+              "archived": false,
+              "disabled": false,
+              "open_issues_count": 1,
+              "license": {
+                "key": "mit",
+                "name": "MIT License",
+                "spdx_id": "MIT",
+                "url": "https://api.github.com/licenses/mit",
+                "node_id": "MDc6TGljZW5zZTEz"
+              },
+              "allow_forking": false,
+              "is_template": false,
+              "web_commit_signoff_required": false,
+              "topics": [],
+              "visibility": "private",
+              "forks": 0,
+              "open_issues": 1,
+              "watchers": 0,
+              "default_branch": "main"
+            }
+          },
+          "base": {
+            "label": "TesfaAI:submissions",
+            "ref": "submissions",
+            "sha": "3e4ec784baedf8f55bfd5fa42ffe90b4ed65b88a",
+            "user": {
+              "login": "TesfaAI",
+              "id": 233163235,
+              "node_id": "O_kgDODeXJ4w",
+              "avatar_url": "https://avatars.githubusercontent.com/u/233163235?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/TesfaAI",
+              "html_url": "https://github.com/TesfaAI",
+              "followers_url": "https://api.github.com/users/TesfaAI/followers",
+              "following_url": "https://api.github.com/users/TesfaAI/following{/other_user}",
+              "gists_url": "https://api.github.com/users/TesfaAI/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/TesfaAI/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/TesfaAI/subscriptions",
+              "organizations_url": "https://api.github.com/users/TesfaAI/orgs",
+              "repos_url": "https://api.github.com/users/TesfaAI/repos",
+              "events_url": "https://api.github.com/users/TesfaAI/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/TesfaAI/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "repo": {
+              "id": 1082096650,
+              "node_id": "R_kgDOQH98Cg",
+              "name": "job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "full_name": "TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "private": true,
+              "owner": {
+                "login": "TesfaAI",
+                "id": 233163235,
+                "node_id": "O_kgDODeXJ4w",
+                "avatar_url": "https://avatars.githubusercontent.com/u/233163235?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/TesfaAI",
+                "html_url": "https://github.com/TesfaAI",
+                "followers_url": "https://api.github.com/users/TesfaAI/followers",
+                "following_url": "https://api.github.com/users/TesfaAI/following{/other_user}",
+                "gists_url": "https://api.github.com/users/TesfaAI/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/TesfaAI/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/TesfaAI/subscriptions",
+                "organizations_url": "https://api.github.com/users/TesfaAI/orgs",
+                "repos_url": "https://api.github.com/users/TesfaAI/repos",
+                "events_url": "https://api.github.com/users/TesfaAI/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/TesfaAI/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "html_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "description": "This repo is for your job role assessment",
+              "fork": false,
+              "url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "forks_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/forks",
+              "keys_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/keys{/key_id}",
+              "collaborators_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/collaborators{/collaborator}",
+              "teams_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/teams",
+              "hooks_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/hooks",
+              "issue_events_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/events{/number}",
+              "events_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/events",
+              "assignees_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/assignees{/user}",
+              "branches_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/branches{/branch}",
+              "tags_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/tags",
+              "blobs_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/blobs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/tags{/sha}",
+              "git_refs_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/refs{/sha}",
+              "trees_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/trees{/sha}",
+              "statuses_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/statuses/{sha}",
+              "languages_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/languages",
+              "stargazers_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/stargazers",
+              "contributors_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/contributors",
+              "subscribers_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/subscribers",
+              "subscription_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/subscription",
+              "commits_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/commits{/sha}",
+              "git_commits_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/git/commits{/sha}",
+              "comments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/comments{/number}",
+              "issue_comment_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/comments{/number}",
+              "contents_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/contents/{+path}",
+              "compare_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/compare/{base}...{head}",
+              "merges_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/merges",
+              "archive_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/{archive_format}{/ref}",
+              "downloads_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/downloads",
+              "issues_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues{/number}",
+              "pulls_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls{/number}",
+              "milestones_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/notifications{?since,all,participating}",
+              "labels_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/labels{/name}",
+              "releases_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/releases{/id}",
+              "deployments_url": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/deployments",
+              "created_at": "2025-10-23T18:20:04Z",
+              "updated_at": "2025-10-23T18:20:10Z",
+              "pushed_at": "2025-10-27T18:38:11Z",
+              "git_url": "git://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "ssh_url": "git@github.com:TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "clone_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi.git",
+              "svn_url": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi",
+              "homepage": null,
+              "size": 49,
+              "stargazers_count": 0,
+              "watchers_count": 0,
+              "language": null,
+              "has_issues": true,
+              "has_projects": true,
+              "has_downloads": true,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_discussions": false,
+              "forks_count": 0,
+              "mirror_url": null,
+              "archived": false,
+              "disabled": false,
+              "open_issues_count": 1,
+              "license": {
+                "key": "mit",
+                "name": "MIT License",
+                "spdx_id": "MIT",
+                "url": "https://api.github.com/licenses/mit",
+                "node_id": "MDc6TGljZW5zZTEz"
+              },
+              "allow_forking": false,
+              "is_template": false,
+              "web_commit_signoff_required": false,
+              "topics": [],
+              "visibility": "private",
+              "forks": 0,
+              "open_issues": 1,
+              "watchers": 0,
+              "default_branch": "main"
+            }
+          },
+          "_links": {
+            "self": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2"
+            },
+            "html": {
+              "href": "https://github.com/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pull/2"
+            },
+            "issue": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/2"
+            },
+            "comments": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/issues/2/comments"
+            },
+            "review_comments": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2/comments"
+            },
+            "review_comment": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/comments{/number}"
+            },
+            "commits": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/pulls/2/commits"
+            },
+            "statuses": {
+              "href": "https://api.github.com/repos/TesfaAI/job-role-ai-agents-developer--llm-integration---data-handling--5ed35e28-dagiteferi/statuses/79545e53b087d1de4ea50690842286411a2779fa"
+            }
+          },
+          "author_association": "COLLABORATOR",
+          "auto_merge": null,
+          "active_lock_reason": null,
+          "merged": false,
+          "mergeable": true,
+          "rebaseable": true,
+          "mergeable_state": "clean",
+          "merged_by": null,
+          "comments": 0,
+          "review_comments": 0,
+          "maintainer_can_modify": false,
+          "commits": 17,
+          "additions": 793,
+          "deletions": 1,
+          "changed_files": 22
+        }
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}

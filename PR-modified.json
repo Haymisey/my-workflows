@@ -1,0 +1,473 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{$json.sender.login}}/{{$json.pull_request.head.repo.name}}/pulls/{{$json.number}}/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "c1edca53-86a6-4e18-83d4-fdb9a56022a5",
+      "name": "Get file's Diffs from PR3",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -16,
+        112
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "algaWuRY0Vctu2Wc",
+          "name": "Bearer Auth account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get both inputs from merge node\nconst analysisInput = $input.all().find(input => input.json.analysis);\nconst prFilesInput = $input.all().find(input => Array.isArray(input.json));\n\nconst analysisData = analysisInput ? analysisInput.json.analysis : null;\nconst fileType = analysisInput ? analysisInput.json.fileType : 'json';\nconst prFiles = prFilesInput ? prFilesInput.json : [];\n\n// Create the teacher comparison prompt\nlet comparisonPrompt = `You are a senior code reviewer acting as a teacher. `;\n\nif (fileType === 'json') {\n  comparisonPrompt += `Compare the pull request changes with the original code analysis.\n\n**ORIGINAL ANALYSIS FOR: ${analysisData.filename}**\n- Score: ${analysisData.score}/100\n- Metrics: ${JSON.stringify(analysisData.metrics, null, 2)}\n- Summary: ${analysisData.summary}`;\n} else {\n  comparisonPrompt += `Compare the pull request changes against the original reference file.\n\n**REFERENCE FILE: ${analysisData.filename}**\n- Content Type: ${analysisData.isCode ? 'Code File' : 'Text File'}`;\n}\n\ncomparisonPrompt += `\\n\\n**PULL REQUEST CHANGES TO REVIEW:**\\n`;\n\nlet diffs = '';\nlet addedFiles = [];\nlet modifiedFiles = [];\n\nfor (const file of prFiles) {\n  // Categorize files by their status\n  if (file.status === 'added') {\n    addedFiles.push(file);\n  } else if (file.status === 'modified') {\n    modifiedFiles.push(file);\n  }\n  \n  diffs += `### File: ${file.filename} [${file.status.toUpperCase()}]\\n`;\n  \n  // Highlight if this is the file matching our analysis/reference\n  if (fileType === 'json' && file.filename === analysisData.filename.replace('-analysis.json', '')) {\n    diffs += \"⭐ **MAIN FILE - COMPARE AGAINST ANALYSIS** ⭐\\n\";\n  } else if (fileType !== 'json' && file.filename === analysisData.filename) {\n    diffs += \"⭐ **REFERENCE FILE - COMPARE CHANGES** ⭐\\n\";\n  }\n  \n  if (file.patch) {\n    const safePatch = file.patch.replace(/```/g, \"''\");\n    diffs += \"```diff\\n\" + safePatch + \"\\n```\\n\";\n  } else {\n    diffs += \"_No patch available (likely binary file)_\\n\";\n  }\n  diffs += \"\\n---\\n\";\n}\n\ncomparisonPrompt += diffs;\n\n// Add reference content if it's not JSON analysis\nif (fileType !== 'json') {\n  comparisonPrompt += `\\n**REFERENCE FILE CONTENT:**\\n\\`\\`\\`\\n${analysisData.content}\\n\\`\\`\\`\\n`;\n}\n\n// Add special instructions based on file types\ncomparisonPrompt += `\n\n**REVIEW STRATEGY BY FILE TYPE:**\n\n${addedFiles.length > 0 ? `**NEW FILES (${addedFiles.length} added):**\n- Review the ENTIRE file content as this is brand new code\n- Check if it follows project patterns and standards\n- Verify it integrates well with existing codebase\n- Ensure it meets quality benchmarks from the beginning\\n` : ''}\n\n${modifiedFiles.length > 0 ? `**MODIFIED FILES (${modifiedFiles.length} changed):**\n- Focus on the CHANGES (diff) shown in the patch\n- Evaluate if changes are improvements or regressions\n- Check if changes maintain/exceed original quality standards\n- Verify the changes solve the intended problem effectively\\n` : ''}\n\n**REVIEW INSTRUCTIONS:**\n1. Compare PR changes against ${fileType === 'json' ? 'original analysis standards' : 'reference file content'}\n2. ${fileType === 'json' ? `Check if changes maintain or improve quality score (${analysisData.score})` : 'Verify changes align with reference implementation'}\n3. ${fileType === 'json' ? 'Verify metrics are preserved: complexity, maintainability, security, etc.' : 'Ensure code quality and best practices are maintained'}\n4. Provide specific, actionable feedback\n5. Suggest improvements if quality might decrease\n6. Focus on the main file first\n\n**FOR ADDED FILES:**\n- Treat as completely new code submission\n- Review entire structure, patterns, and architecture\n- Check if it meets all quality metrics from start\n- Provide comprehensive feedback on the whole implementation\n\n**FOR MODIFIED FILES:**\n- Focus on the specific changes made\n- Evaluate the quality of the modifications\n- Check if changes introduce new issues or fix existing ones\n- Assess if the changes are minimal and focused\n\n**YOUR MISSION:**\n- Review the proposed code changes file by file and by significant modification\n- Generate inline comments on the relevant lines of code\n- Ignore files without patches\n- Do not repeat the code snippet or the filename\n- Write the comments directly, without introducing the context\n- Act as a teacher providing constructive feedback\n\n**OUTPUT FORMAT:**\n- Start with overall assessment\n- Then provide file-by-file comments (separate added vs modified files)\n- End with specific recommendations\n- Use clear, constructive language\n`;\n\nreturn [\n  {\n    json: {\n      user_message: comparisonPrompt.trim(),\n      analysis_present: fileType === 'json',\n      reference_file: fileType !== 'json' ? analysisData.filename : null,\n      pr_files_count: prFiles.length,\n      added_files_count: addedFiles.length,\n      modified_files_count: modifiedFiles.length,\n      added_files: addedFiles.map(f => f.filename),\n      modified_files: modifiedFiles.map(f => f.filename)\n    }\n  }\n];"
+      },
+      "id": "45714ebd-32c0-464b-9853-d7e4fc0c9314",
+      "name": "Create target Prompt from PR Diffs3",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        608,
+        -16
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Code3').first().json.pull_request.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Code3').first().json.pull_request.head.repo.name }}",
+          "mode": "name"
+        },
+        "pullRequestNumber": "={{ $('Code3').first().json.number }}",
+        "event": "comment",
+        "body": "={{$json.output}}",
+        "additionalFields": {}
+      },
+      "id": "57c00dbb-7748-4bba-adff-b40de0776f95",
+      "name": "GitHub Robot",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        1152,
+        -16
+      ],
+      "webhookId": "39c2fe8b-f686-4699-8450-2a5b4c263d93",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $('Code3').first().json.pull_request.head.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $('Code3').first().json.pull_request.head.repo.name }}",
+          "mode": "name"
+        },
+        "issueNumber": "={{ $('Code3').first().json.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "Reviewed"
+            }
+          ]
+        }
+      },
+      "id": "a93dc0c8-5335-4333-9daf-ab85776a46b7",
+      "name": "Add Label to PR3",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        1888,
+        -16
+      ],
+      "webhookId": "c98f39f1-603b-4013-9149-53b4cc31b611",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {}
+      },
+      "id": "87b0ac00-7f2e-4df5-a08f-1e68bf2ad37d",
+      "name": "Code Review Agent3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        832,
+        -16
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        832,
+        176
+      ],
+      "id": "778df21c-9420-4e40-94b2-956b4b056abc",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KDGdFCSyTiJB9H9k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "={{ $json.pull_request.user.login }}",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "={{ $json.pull_request.head.repo.name }}",
+          "mode": "name"
+        },
+        "filePath": "=assessments/INSTRUCTION.md",
+        "asBinaryProperty": false,
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        -128
+      ],
+      "id": "63a89f4f-157e-4be1-bbd6-b0413152c809",
+      "name": "Get a file3",
+      "webhookId": "d3d1b992-875f-4982-bef2-ae7f4ff135fd",
+      "credentials": {
+        "githubApi": {
+          "id": "dyoK4vtG0c60L2yj",
+          "name": "GitHub account Nati"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "468307a5-c338-4da3-83a2-9426d9c18ccc",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { Buffer } = require('buffer');\nconst originalFile = $input.first();\n \ntry {\n  const decodedContent = Buffer.from(originalFile.json.content, 'base64').toString('utf8');\n  \n  // Detect if it's JSON or code/text\n  let analysisData;\n  let fileType = 'unknown';\n  \n  try {\n    // Try to parse as JSON first\n    analysisData = JSON.parse(decodedContent);\n    fileType = 'json';\n  } catch (jsonError) {\n    // If not JSON, treat as text/code\n    analysisData = {\n      content: decodedContent,\n      filename: originalFile.json.name,\n      isCode: true\n    };\n    fileType = 'text';\n  }\n  \n  return [\n    {\n      json: {\n        analysis: analysisData,\n        originalFile: originalFile.json,\n        fileType: fileType,\n        success: true\n      }\n    }\n  ];\n  \n} catch (error) {\n  return [\n    {\n      json: {\n        error: Error,\n        success: false\n      }\n    }\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        -128
+      ],
+      "id": "eedacf66-e084-45e3-9f66-2ce04a17a295",
+      "name": "Decode File3"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{$('Code3').first().json.pull_request.user.login}}/{{ $('Code3').first().json.pull_request.head.repo.name }}/pulls/{{ $('Code3').first().json.number}}/merge",
+        "sendHeaders": true,
+        "specifyHeaders": "=json",
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonHeaders": "={\n  \"Authorization\": \"Bearer {{ $json.token }}\",\n  \"Accept\": \"application/vnd.github+json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1712,
+        -16
+      ],
+      "id": "40f3b47e-665c-401b-942d-03557e340909",
+      "name": "HTTP Request12"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst {Buffer} = require('buffer')\n\nconst appId = '1865673';\nconst privateKey = `-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAubvN1GdSuCa2e/+aOTabb6jy9f4f2ytycvnCehhzEzoOLUXw\nk6RxisehHe+rspUSrtAOF+2pLuE4e+3zZosnOxfqXF8kOUAX3jBV1xyyO4nGyqii\nDu9zvp80m7YEAfE8eeboaUsB6Lb532PzVS67Y3oRledWLRnXKXYyEw3xn5Oho8ge\n5Ao7PNI39U1PLe7F8dsmpW7yxk2RekgVbBcaawWD9XQEQnQx1yox38FSrqzOHEcT\n4dxLY62Tr6TdJwPuWFeLItT9rmVKm5OX9FW+Fdg9Nd6if4quS33BADvtNKFBEO3p\nHEmmtYsConp9OmLENfIjzuP/njZnoa6LDhSC6QIDAQABAoIBAEAt6yP4SBcmGWyj\nmDEo83EUGlBybaOYUcX1FASIqkr8hqWSQ11hN3LTJJNpnBTrejc54YTXNNzkKlZ4\nlODcOMQssWkV3ziBMz4tyZu5aMU2CKFCwC0VBRPbg5xCuwPIzjL5XVn090Xo5FMT\nAKRwr4PiTG1WMOsIwNas5wS6jsGq9RL4jAv20Znkg2OchY81ShaK825z1yJg5xzy\nXTZdQq8egjA9Q3t56IkUhL0lLfiIk+oFPd4pguUvX+CFelyeOStTMnsRzaWnGz6a\nRucxU8nixjbCxIET0uO0OdoiUFky5SWXWJbYCvl1Zu+fNkCKOlWyM2qJFpv1TxsJ\n283AvQECgYEA5MBv2jzpu9QtEBjQhx+MtzaQk4agVFMCYreAdNxPmPiHh/MzG/Q/\nF0naZV+030YeCAZnR11qwhNUO6NQUGpB0/GSOsJ+XLf+uoiU1sksbIBBMFJCHDgQ\n/7ajmBg7BJh/RDl7MskH5MBv/wI5jrSvdc3r6pqb4QUtnFO3NTI/I9ECgYEAz9uS\nVrvwnffHzPMesVwl267G4OEAs8SeBviSeNRkTww9zkM80YHl7WnfKeDn5vz0vBAe\nVhOKu7lGC+zjftq7HpELj9YazDJfltCe92nJCgN8PDEr2a9b+WwNn19gW5TWsj/f\nb6XXAC7A+zQ0S3hVSe4/OvtkY+eZ3PVIiW8UK5kCgYEAvRjXXfE8xqh/F+9rckgC\navIQUePYZdy4/CH1bqUwp6PLZfcFKPafsQC8KVEUk/3ClZ+1gKkYt5aC60n1+oPc\nJvhriWd+TedMC6ccYvGqZ4ceXHOjcvBmHP09/10IbKQjkKJz1WeZvt/VtViBfBah\ndSDlBOsKMNm2+qO5r5/50gECgYAnndbvdxSuVwqa0n+4GDMTAuXe+KOUn9XqyDfK\nldikhFXHWWNfHx3+uR4Ssk4g5XeT3JKbn0/i5bYnEbhudiwR8F0+xfUHlFZJvWt/\nBoeNxApKwqhz7gtep6yVAq2v5tdg0/G3KummnEKl3lZVSBMhaypcCIwiyoK17X4s\ny6IRiQKBgQCY4yEs6Cg8MxsnCg92LQujgUoCKz9ZJnRK77PQerCrk6lfmFXsd8xY\nRbwWFMrxOrQFZOjwoVbs37olkvAKEcSFNr3QQsKviD4/MS49MWQNQytWDAT8d05Y\nNxx8HIsQL8SDMUzOT3cUjMaexX1atTMzKzf7Er7eobENkTuRedZXaQ==\n-----END RSA PRIVATE KEY-----`;\n\nfunction base64url(input) {\n  return Buffer.from(JSON.stringify(input))\n    .toString('base64')\n    .replace(/=/g, '')\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_');\n}\n\nconst now = Math.floor(Date.now() / 1000);\n\nconst header = { alg: 'RS256', typ: 'JWT' };\nconst payload = {\n  iat: now,\n  exp: now + (10 * 60), // 10 minutes\n  iss: appId,\n};\n\nconst headerBase64 = base64url(header);\nconst payloadBase64 = base64url(payload);\nconst data = `${headerBase64}.${payloadBase64}`;\n\nconst signature = crypto\n  .createSign('RSA-SHA256')\n  .update(data)\n  .sign(privateKey, 'base64')\n  .replace(/=/g, '')\n  .replace(/\\+/g, '-')\n  .replace(/\\//g, '_');\n\nconst token = `${data}.${signature}`;\n\nreturn [{ json: { jwt: token } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "d70a51db-f744-4428-9276-af3f5946859a",
+      "name": "JWT6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/app/installations/86555484/access_tokens",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Authorization\": \"Bearer {{ $json.jwt }} \",\n  \"Accept\": \"application/vnd.github+json\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        -16
+      ],
+      "id": "a8e20b8e-d2dc-4beb-bcae-6b3d90820d5a",
+      "name": "HTTP Request13",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "queue": "pr_review_modified",
+        "options": {
+          "assertExchange": true,
+          "assertQueue": true,
+          "acknowledge": "immediately"
+        }
+      },
+      "type": "n8n-nodes-base.rabbitmqTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -16
+      ],
+      "id": "7026dbfd-1a64-4c12-9358-07f3b7202af3",
+      "name": "RabbitMQ Trigger Modified",
+      "credentials": {
+        "rabbitmq": {
+          "id": "frNc9c66hvHWjYqb",
+          "name": "RabbitMQ account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first item from the RabbitMQ Trigger\nconst item = $input.first();\n\n// 1. First Parse: Parse the outer RabbitMQ message content string.\n// This results in an object where the 'body' property is STILL a string.\nconst rabbitMqContent = JSON.parse(item.json.content);\n\n// 2. Second Parse: Take the 'body' string and parse IT into a real object.\nconst finalWebhookObject = JSON.parse(rabbitMqContent.body);\n\n// Return the final, clean webhook object.\nreturn [\n  {\n    json: finalWebhookObject\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        112
+      ],
+      "id": "5cabfa13-b671-4db0-92f0-96ad736d6007",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first item from the RabbitMQ Trigger\nconst item = $input.first();\n\n// 1. First Parse: Parse the outer RabbitMQ message content string.\n// This results in an object where the 'body' property is STILL a string.\nconst rabbitMqContent = JSON.parse(item.json.content);\n\n// 2. Second Parse: Take the 'body' string and parse IT into a real object.\nconst finalWebhookObject = JSON.parse(rabbitMqContent.body);\n\n// Return the final, clean webhook object.\nreturn [\n  {\n    json: finalWebhookObject\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -128
+      ],
+      "id": "0c7e8dbc-94b6-4a96-8796-aa2bb5fdd4ac",
+      "name": "Code3"
+    }
+  ],
+  "connections": {
+    "Get file's Diffs from PR3": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create target Prompt from PR Diffs3": {
+      "main": [
+        [
+          {
+            "node": "Code Review Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Robot": {
+      "main": [
+        [
+          {
+            "node": "JWT6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Review Agent3": {
+      "main": [
+        [
+          {
+            "node": "GitHub Robot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Code Review Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file3": {
+      "main": [
+        [
+          {
+            "node": "Decode File3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Create target Prompt from PR Diffs3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode File3": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request12": {
+      "main": [
+        [
+          {
+            "node": "Add Label to PR3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request13": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RabbitMQ Trigger Modified": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Get file's Diffs from PR3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Get a file3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "3910283a5cdf346a16acfc0a202741e984548aa23ef553123c93fda445f39d1a"
+  }
+}
