@@ -1,0 +1,269 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cce3524c-6ac6-4438-94cc-9efd2dc33e10",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "http://api.aviationstack.com/v1/flights",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_key",
+              "value": "f530af7c532f068c0612a117f0436ed7"
+            },
+            {
+              "name": "airline_name",
+              "value": "Ethiopian Airlines"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2498a1a0-b805-4378-95ce-170f339489fe",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const flights = items[0].json.data;\n\nreturn flights.map(flight => {\n  // 1. Calculate Delay Status\n  let delayAmount = flight.arrival.delay || 0; \n  let performanceStatus = \"On-Time\";\n  if (delayAmount > 60) performanceStatus = \"Major Delay\";\n  else if (delayAmount > 15) performanceStatus = \"Slight Delay\";\n\n  // 2. Extract City Name from Timezone (e.g., \"Africa/Addis_Ababa\" -> \"Addis Ababa\")\n  // We split by \"/\" and take the second part, then replace underscores with spaces.\n  let rawCity = flight.arrival.timezone ? flight.arrival.timezone.split('/')[1] : \"Addis Ababa\";\n  let cleanCity = rawCity.replace('_', ' ');\n\n  return {\n    json: {\n      flight_number: flight.flight.iata,\n      airline: flight.airline.name,\n      origin: flight.departure.airport,\n      destination: flight.arrival.airport,\n      destination_city: cleanCity,\n      scheduled_arrival: flight.arrival.scheduled,\n      delay_minutes: delayAmount,\n      status: performanceStatus,\n      report_time: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "75628ebb-7862-43e7-917e-0ef5d4a69e56",
+      "name": "Data Engineering"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.powerbi.com/beta/a3be2d39-c8cb-499b-9c85-b71e09f93f9f/datasets/79a216f2-bd38-4aef-a32b-0af6862a890d/rows?experience=power-bi&disablecdnExpiration=1772552316&key=Oke4Nne16ezJKkCtr6q4%2BgYR%2FMD88Zri9chlEd4Nur%2F6Nm7z6i5BKmiAHyszlgiJnWyWrOqzauBKxVofuqJ47w%3D%3D",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1408,
+        16
+      ],
+      "id": "cc6bed08-34c1-485c-abc1-63933d46b5f9",
+      "name": "send to powerBI"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        16
+      ],
+      "id": "ad66fbe6-3749-4450-b6c8-16a1d28bc0da",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -144
+      ],
+      "id": "de08463c-ce91-487e-aad9-c2d0545b2ba8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather ",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.destination_city }}"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "appid",
+              "value": "a80a9ac453482bf2b544fa4d40423659"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        112
+      ],
+      "id": "7ad824e6-d68d-4696-95d8-c55d7a3ab62a",
+      "name": "weather"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        16
+      ],
+      "id": "013bce39-51e6-4698-90fb-6e6861144073",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      flight_number: item.json.flight_number,\n      airline: item.json.airline,\n      origin: item.json.origin,\n      destination: item.json.destination,\n      status: item.json.status,\n      delay_minutes: item.json.delay_minutes,\n      // Cleaned Weather Data\n      temp: item.json.main.temp,\n      weather_condition: item.json.weather[0].description,\n      humidity: item.json.main.humidity,\n      report_time: item.json.report_time\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        16
+      ],
+      "id": "cfc6f13a-3294-48de-bdfe-e02b4d90548e",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Data Engineering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Engineering": {
+      "main": [
+        [
+          {
+            "node": "weather",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send to powerBI": {
+      "main": [
+        []
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "send to powerBI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "weather": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "446fe20ce5b4253f83fde1209dc8a2ae8abfaa880e28152ac62bfe0512953d67"
+  }
+}
